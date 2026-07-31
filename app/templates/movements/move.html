@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}Перемещение {{ item.inv_number }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="/items">Единицы</a> / <a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / перемещение</div>
+<h1 style="margin-bottom:16px">Переместить</h1>
+
+<section class="card" style="max-width:560px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+    </div>
+
+    <form method="post" action="/items/{{ item.id }}/move">
+      {% set current_kind = item.loc_kind %}
+      {% include "partials/_placement_fields.html" %}
+
+      <div class="form-row">
+        <label for="reason">Основание</label>
+        <select id="reason" name="reason">
+          <option value="">— по виду размещения —</option>
+          {% for reason, label in MOVEMENT_REASON_LABELS.items() %}
+            {% if reason != MovementReason.REGISTER %}
+              <option value="{{ reason.value }}">{{ label }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment" placeholder="Например: подготовка к выдаче">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Записать перемещение</button>
+        <a class="btn" href="/items/{{ item.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'items' %}
+{% set can_edit = user.can(UserRole.EDITOR) and not item.is_written_off %}
+{% block title %}{{ item.inv_number }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs">
+      <a href="/items">Единицы</a> /
+      {%- for parent in ancestors | reverse %}
+        <a href="/items/{{ parent.id }}">{{ parent.inv_number }}</a> /
+      {%- endfor %}
+      {{ item.type.name }}
+    </div>
+    <h1><span class="inv">{{ item.inv_number }}</span> · {{ item.name }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      {{ ui.status_badge(item.status) }}
+      <span class="type-chip">{{ item.type.name }}</span>
+      {% if item.legacy_number %}<span class="type-chip">старый номер {{ item.legacy_number }}</span>{% endif %}
+    </div>
+  </div>
+
+  {% if can_edit %}
+  <div class="actions desktop-only">
+    {% if item.loc_kind == LocationKind.PERSON %}
+      <a class="btn btn--primary" href="/items/{{ item.id }}/return">Принять возврат</a>
+    {% else %}
+      <a class="btn btn--primary" href="/items/{{ item.id }}/issue">Выдать</a>
+    {% endif %}
+    <a class="btn" href="/items/{{ item.id }}/move">Переместить</a>
+    <a class="btn btn--ghost" href="/items/{{ item.id }}/edit">Изменить</a>
+    <a class="btn btn--danger" href="/items/{{ item.id }}/write-off">Списать</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if duplicates %}
+<div class="flash flash--warn">
+  Прежний номер {{ item.legacy_number }} уже используется:
+  {% for other in duplicates %}<a href="/items/{{ other.id }}" class="inv">{{ other.inv_number }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div class="cols">
+  <div>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Основное</h2>
+        {% if can_edit %}<a class="btn btn--sm btn--ghost" href="/items/{{ item.id }}/edit">Изменить</a>{% endif %}
+      </div>
+      <div class="card__body">
+        <dl class="kv">
+          <dt>Инвентарный номер</dt><dd class="inv">{{ item.inv_number }}</dd>
+          <dt>Прежний номер</dt><dd>{{ item.legacy_number or '—' }}</dd>
+          <dt>Тип</dt><dd>{{ item.type.name }} ({{ item.type.code }})</dd>
+          <dt>Производитель, модель</dt>
+          <dd>{% if item.manufacturer or item.model %}{{ item.manufacturer or '' }} {{ item.model or '' }}{% else %}—{% endif %}</dd>
+          <dt>Серийный номер</dt><dd class="inv">{{ item.serial_number or '—' }}</dd>
+          <dt>Статус</dt><dd>{{ ui.status_badge(item.status) }}</dd>
+          <dt>Состояние</dt><dd>{{ item.condition_note or '—' }}</dd>
+          <dt>Дата покупки</dt><dd>{{ item.purchase_date | d }}</dd>
+          <dt>Гарантия до</dt><dd>{{ item.warranty_until | d }}</dd>
+          <dt>Заметки</dt><dd>{{ item.notes or '—' }}</dd>
+        </dl>
+      </div>
+    </section>
+
+    {% if item.attributes %}
+    <section class="card">
+      <div class="card__head"><h2>Дополнительные атрибуты</h2></div>
+      <div class="card__body">
+        <dl class="kv">
+          {% for attribute in item.attributes %}
+            <dt>{{ attribute.key }}</dt><dd>{{ attribute.value }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if item.type.is_container %}
+    <section class="card">
+      <div class="card__head">
+        <h2>Состав — {{ contents | length }}</h2>
+      </div>
+      <div class="card__body card__body--flush">
+        {% if not contents %}
+          <div class="empty-state">Пусто. Чтобы вложить единицу, откройте её карточку и нажмите «Переместить».</div>
+        {% else %}
+        <ul class="rows">
+          {% for child in contents %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title">
+                <a href="/items/{{ child.id }}" class="inv">{{ child.inv_number }}</a> {{ child.name }}
+              </div>
+              <div class="rows__sub">{{ child.type.name }} · здесь с {{ child.loc_since | d }}</div>
+            </div>
+            {{ ui.status_badge(child.status) }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+  <div>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Где сейчас</h2>
+        {% if can_edit %}<a class="btn btn--sm" href="/items/{{ item.id }}/move">Переместить</a>{% endif %}
+      </div>
+      <div class="card__body">
+        <div class="placement">
+          <div class="placement__icon">{{ item.loc_kind | location_kind_icon }}</div>
+          <div class="placement__main">
+            <div class="placement__title">{{ ui.location_cell(item) }}</div>
+            <div class="placement__sub">{{ item.loc_kind | location_kind_label }}</div>
+            <div class="placement__sub">Здесь с {{ item.loc_since | d }} — {{ item.loc_since | since }}</div>
+          </div>
+        </div>
+        {% if open_issue %}
+          {% if open_issue.expected_return_date %}
+            <div class="note">
+              Ожидаемый возврат: {{ open_issue.expected_return_date | d }}{% if open_issue.is_overdue %} — просрочен{% endif %}.
+            </div>
+          {% else %}
+            <div class="note">Ожидаемый возврат не указан — выдача бессрочная.</div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h2>История перемещений</h2></div>
+      <div class="card__body card__body--flush">
+        <ul class="timeline">
+          {% for movement in history %}
+          <li class="{{ 'is-current' if loop.first }}">
+            <div class="timeline__date">{{ movement.moved_at | dt }}</div>
+            <div class="timeline__what">{{ movement.reason | reason_label }}</div>
+            <div class="timeline__where">
+              {% if movement.from_kind %}{{ movement.from_label }} → {% endif %}{{ movement.to_label }}
+            </div>
+            <div class="timeline__meta">
+              {% if movement.moved_by %}внёс {{ movement.moved_by.display_name }}{% else %}автор не указан{% endif %}
+              {%- if movement.expected_return_date %} · возврат до {{ movement.expected_return_date | d }}{% endif %}
+              {%- if movement.returned_at %} · возвращено {{ movement.returned_at | d }}{% endif %}
+              {%- if movement.comment %} · «{{ movement.comment }}»{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block after %}
+{% if can_edit %}
+<div class="actionbar mobile-only">
+  {% if item.loc_kind == LocationKind.PERSON %}
+    <a class="btn btn--primary" href="/items/{{ item.id }}/return">Принять возврат</a>
+  {% else %}
+    <a class="btn btn--primary" href="/items/{{ item.id }}/issue">Выдать</a>
+  {% endif %}
+  <a class="btn" href="/items/{{ item.id }}/move">Переместить</a>
+  <a class="btn btn--ghost" href="/items/{{ item.id }}/edit">Изменить</a>
+</div>
+{% endif %}
+{% endblock %}

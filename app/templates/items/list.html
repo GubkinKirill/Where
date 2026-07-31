@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}Единицы учёта — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <h1>Единицы учёта</h1>
+  <div class="actions">
+    {% if user.can(UserRole.EDITOR) %}
+      <a class="btn btn--primary" href="/items/new">Добавить единицу</a>
+    {% endif %}
+  </div>
+</div>
+
+<form class="search" method="get" action="/items"
+      hx-get="/items" hx-target="#item-rows" hx-trigger="submit, keyup changed delay:400ms from:#q"
+      hx-push-url="true" hx-include="closest form">
+  <input type="search" id="q" name="q" value="{{ filters.q or '' }}"
+         placeholder="Номер, старый номер, серийный, модель, ФИО…" autocomplete="off">
+  <button class="btn btn--primary" type="submit">Найти</button>
+</form>
+
+<form class="filters" method="get" action="/items"
+      hx-get="/items" hx-target="#item-rows" hx-trigger="change" hx-push-url="true">
+  <input type="hidden" name="q" value="{{ filters.q or '' }}">
+
+  <select name="type_id">
+    <option value="">Все типы</option>
+    {% for type in types %}
+      <option value="{{ type.id }}" {{ 'selected' if filters.type_id == type.id }}>{{ type.name }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="status">
+    <option value="">Все статусы</option>
+    {% for status, label in STATUS_LABELS.items() %}
+      <option value="{{ status.value }}" {{ 'selected' if filters.status == status }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="loc_kind">
+    <option value="">Любое размещение</option>
+    {% for kind, label in LOCATION_KIND_LABELS.items() %}
+      <option value="{{ kind.value }}" {{ 'selected' if filters.loc_kind == kind }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="room_id">
+    <option value="">Все кабинеты</option>
+    {% for room in rooms %}
+      <option value="{{ room.id }}" {{ 'selected' if filters.room_id == room.id }}>{{ room.number }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="department_id">
+    <option value="">Все отделы</option>
+    {% for department in departments %}
+      <option value="{{ department.id }}" {{ 'selected' if filters.department_id == department.id }}>{{ department }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="employee_id">
+    <option value="">Все сотрудники</option>
+    {% for employee in employees %}
+      <option value="{{ employee.id }}" {{ 'selected' if filters.employee_id == employee.id }}>{{ employee.short_name }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="btn btn--sm btn--ghost">
+    <input type="checkbox" name="include_written_off" value="true" {{ 'checked' if filters.include_written_off }}>
+    со списанными
+  </label>
+  <a class="btn btn--sm btn--ghost" href="/items">Сбросить</a>
+</form>
+
+<div id="item-rows">
+  {% include "items/_rows.html" %}
+</div>
+{% endblock %}

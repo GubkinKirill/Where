@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Нет доступа — Учёт техники{% endblock %}
+{% block content %}
+  <h1>Нет доступа</h1>
+  <p class="empty-state">
+    Для этого действия нужна роль «{{ required | role_label }}».<br>
+    <a href="/items">Вернуться к списку единиц</a>
+  </p>
+{% endblock %}

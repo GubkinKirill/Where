@@ -1,0 +1,82 @@
+{# Placement chooser. Only the fields of the selected kind are enabled, so the
+   form never submits a stale target from a hidden block. #}
+{% set current_kind = current_kind or LocationKind.STORAGE %}
+
+<div class="form-row">
+  <label for="loc_kind">Вид размещения <span class="req">*</span></label>
+  <select id="loc_kind" name="loc_kind" onchange="toggleLocationFields(this.value)">
+    {% for kind, label in LOCATION_KIND_LABELS.items() %}
+      {% if kind != LocationKind.WRITTEN_OFF %}
+        <option value="{{ kind.value }}" {{ 'selected' if current_kind == kind }}>{{ label }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>
+
+<div class="form-row loc-target" data-kind="storage">
+  <label for="storage_place_id">Место хранения <span class="req">*</span></label>
+  <select id="storage_place_id" name="storage_place_id">
+    <option value="">— выберите —</option>
+    {% for place in storage_places %}
+      <option value="{{ place.id }}">{{ place.full_path }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="form-row loc-target" data-kind="person">
+  <label for="employee_id">Сотрудник <span class="req">*</span></label>
+  <select id="employee_id" name="employee_id">
+    <option value="">— выберите —</option>
+    {% for employee in employees %}
+      <option value="{{ employee.id }}">{{ employee.short_name }}{% if employee.position %} · {{ employee.position }}{% endif %}</option>
+    {% endfor %}
+  </select>
+  <div class="hint">Кабинет берётся из карточки сотрудника. Переопределить можно ниже.</div>
+  <label for="person_room_id" style="margin-top:10px">Кабинет (необязательно)</label>
+  <select id="person_room_id" name="room_id">
+    <option value="">— как в карточке сотрудника —</option>
+    {% for room in rooms %}
+      <option value="{{ room.id }}">{{ room.number }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="form-row loc-target" data-kind="room">
+  <label for="room_id">Кабинет <span class="req">*</span></label>
+  <select id="room_id" name="room_id">
+    <option value="">— выберите —</option>
+    {% for room in rooms %}
+      <option value="{{ room.id }}">{{ room.number }}{% if room.description %} — {{ room.description }}{% endif %}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="form-row loc-target" data-kind="inside">
+  <label for="parent_item_id">Внутри единицы <span class="req">*</span></label>
+  <select id="parent_item_id" name="parent_item_id">
+    <option value="">— выберите —</option>
+    {% for container in containers %}
+      {% if not item or container.id != item.id %}
+        <option value="{{ container.id }}">{{ container.inv_number }} — {{ container.name }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>
+
+<div class="form-row loc-target" data-kind="external">
+  <label for="external_note">Куда и кому передано <span class="req">*</span></label>
+  <input type="text" id="external_note" name="external_note" placeholder="Отдел 117, Иванову">
+</div>
+
+<script>
+  function toggleLocationFields(kind) {
+    document.querySelectorAll('.loc-target').forEach(function (block) {
+      var active = block.dataset.kind === kind;
+      block.hidden = !active;
+      block.querySelectorAll('input, select, textarea').forEach(function (field) {
+        field.disabled = !active;
+      });
+    });
+  }
+  toggleLocationFields(document.getElementById('loc_kind').value);
+</script>

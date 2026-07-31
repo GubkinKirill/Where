@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}{{ 'Новая единица' if not item else item.inv_number ~ ' — изменение' }} — Учёт техники{% endblock %}
+{% block page_class %}{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/items">Единицы</a> /
+  {% if item %}<a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / изменение{% else %}новая единица{% endif %}
+</div>
+<h1 style="margin-bottom:16px">{{ 'Изменить единицу' if item else 'Новая единица учёта' }}</h1>
+
+<section class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" action="{{ '/items/' ~ item.id ~ '/edit' if item else '/items/new' }}">
+
+      {% if item %}
+        <div class="subject">
+          <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+          <span>Номер и размещение здесь не меняются: размещение — только через журнал.</span>
+        </div>
+      {% endif %}
+
+      <div class="form-row">
+        <label for="type_id">Тип <span class="req">*</span></label>
+        <select id="type_id" name="type_id" required>
+          <option value="">— выберите —</option>
+          {% for type in types %}
+            <option value="{{ type.id }}" {{ 'selected' if values.type_id and values.type_id|string == type.id|string }}>
+              {{ type.name }} ({{ type.code }})
+            </option>
+          {% endfor %}
+        </select>
+        {% if not item %}<div class="hint">Инвентарный номер будет выдан автоматически по префиксу типа.</div>{% endif %}
+      </div>
+
+      <div class="form-row">
+        <label for="name">Название <span class="req">*</span></label>
+        <input type="text" id="name" name="name" value="{{ values.name or '' }}" required
+               placeholder="Системный блок HP ProDesk 400 G6">
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="manufacturer">Производитель</label>
+          <input type="text" id="manufacturer" name="manufacturer" value="{{ values.manufacturer or '' }}">
+        </div>
+        <div class="form-row">
+          <label for="model">Модель</label>
+          <input type="text" id="model" name="model" value="{{ values.model or '' }}">
+        </div>
+        <div class="form-row">
+          <label for="serial_number">Серийный номер</label>
+          <input type="text" id="serial_number" name="serial_number" value="{{ values.serial_number or '' }}">
+        </div>
+        <div class="form-row">
+          <label for="legacy_number">Прежний номер</label>
+          <input type="text" id="legacy_number" name="legacy_number" value="{{ values.legacy_number or '' }}" placeholder="235-70">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="status">Статус</label>
+        <select id="status" name="status">
+          {% for status, label in STATUS_LABELS.items() %}
+            <option value="{{ status.value }}" {{ 'selected' if values.status == status.value }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if not item %}
+      <h2 style="margin:22px 0 12px">Где находится</h2>
+      {% include "partials/_placement_fields.html" %}
+      {% endif %}
+
+      <details class="more">
+        <summary>Дополнительно</summary>
+        <div style="padding-top:10px">
+          <div class="form-row">
+            <label for="condition_note">Состояние</label>
+            <input type="text" id="condition_note" name="condition_note" value="{{ values.condition_note or '' }}"
+                   placeholder="Не работает один USB-порт">
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="purchase_date">Дата покупки</label>
+              <input type="date" id="purchase_date" name="purchase_date" value="{{ values.purchase_date or '' }}">
+            </div>
+            <div class="form-row">
+              <label for="warranty_until">Гарантия до</label>
+              <input type="date" id="warranty_until" name="warranty_until" value="{{ values.warranty_until or '' }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="notes">Заметки</label>
+            <textarea id="notes" name="notes" rows="2">{{ values.notes or '' }}</textarea>
+          </div>
+
+          <div class="form-row">
+            <label>Дополнительные атрибуты</label>
+            <div class="hint" style="margin-bottom:8px">
+              Назначение, образ ОС, MAC, IP, версия платы — для Raspberry Pi и подобного.
+            </div>
+            {% for key, value in attributes.items() %}
+              <div class="form-grid">
+                <input type="text" name="attr_key" value="{{ key }}" list="attr-keys" placeholder="ключ">
+                <input type="text" name="attr_value" value="{{ value }}" placeholder="значение">
+              </div>
+            {% endfor %}
+            {% for _ in range(3) %}
+              <div class="form-grid">
+                <input type="text" name="attr_key" list="attr-keys" placeholder="ключ">
+                <input type="text" name="attr_value" placeholder="значение">
+              </div>
+            {% endfor %}
+            <datalist id="attr-keys">
+              {% for type in types %}{% for key in type.suggested_attributes or [] %}
+                <option value="{{ key }}"></option>
+              {% endfor %}{% endfor %}
+            </datalist>
+          </div>
+
+          {% if not item %}
+          <div class="form-row">
+            <label for="comment">Комментарий к постановке на учёт</label>
+            <input type="text" id="comment" name="comment" placeholder="Откуда получена">
+          </div>
+          {% endif %}
+        </div>
+      </details>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">{{ 'Сохранить' if item else 'Создать' }}</button>
+        <a class="btn" href="{{ '/items/' ~ item.id if item else '/items' }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

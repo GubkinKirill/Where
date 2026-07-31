@@ -1,0 +1,61 @@
+{% import "partials/_macros.html" as ui %}
+
+<div class="count">Найдено {{ items | length }} из {{ total }}</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not items %}
+      <div class="empty-state">Ничего не найдено. Измените запрос или сбросьте фильтры.</div>
+    {% else %}
+
+    <div class="table-wrap desktop-only">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Номер</th>
+            <th>Название</th>
+            <th>Тип</th>
+            <th>Статус</th>
+            <th>Где сейчас</th>
+            <th>Изменено</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>
+              <a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a>
+              {% if item.legacy_number %}<div class="nested-mark">{{ item.legacy_number }}</div>{% endif %}
+            </td>
+            <td>
+              {% if item.loc_kind == LocationKind.INSIDE %}<span class="nested-mark">└</span> {% endif %}
+              {{ item.name }}
+            </td>
+            <td><span class="type-chip">{{ item.type.name }}</span></td>
+            <td>{{ ui.status_badge(item.status) }}</td>
+            <td>{{ ui.location_cell(item) }}</td>
+            <td>{{ item.updated_at | d }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="rows mobile-only">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a>
+            {{ ui.status_badge(item.status) }}
+          </div>
+          <div class="rows__sub">{{ item.name }}</div>
+          <div class="rows__sub">{{ ui.location_cell(item) }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% endif %}
+  </div>
+</section>

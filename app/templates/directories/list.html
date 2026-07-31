@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set section = 'directories' %}
+{% block title %}{{ spec.title }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/directories">Справочники</a></div>
+    <h1>{{ spec.title }}</h1>
+  </div>
+  {% if user.can(UserRole.ADMIN) %}
+    <a class="btn btn--primary" href="/directories/{{ spec.slug }}/new">Добавить</a>
+  {% endif %}
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not rows %}
+      <div class="empty-state">Записей пока нет.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            {% for _, label in spec.columns %}<th>{{ label }}</th>{% endfor %}
+            {% if user.can(UserRole.ADMIN) %}<th></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
+            {% if user.can(UserRole.ADMIN) %}
+            <td style="text-align:right; white-space:nowrap">
+              <a class="btn btn--sm btn--ghost" href="/directories/{{ spec.slug }}/{{ row.id }}">Изменить</a>
+              <form method="post" action="/directories/{{ spec.slug }}/{{ row.id }}/delete" style="display:inline"
+                    onsubmit="return confirm('Удалить запись?')">
+                <button class="btn btn--sm btn--ghost" type="submit">Удалить</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

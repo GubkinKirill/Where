@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}Списание {{ item.inv_number }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="/items">Единицы</a> / <a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / списание</div>
+<h1 style="margin-bottom:16px">Списать единицу</h1>
+
+<section class="card" style="max-width:560px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+    </div>
+
+    <div class="flash flash--warn">
+      После списания единица перестаёт перемещаться, а её инвентарный номер не переиспользуется.
+      {% if contents %}
+        Внутри неё числится {{ contents | length }} ед.: они останутся в составе и списаны не будут —
+        выньте нужное заранее.
+      {% endif %}
+    </div>
+
+    <form method="post" action="/items/{{ item.id }}/write-off">
+      <div class="form-row">
+        <label for="comment">Причина списания</label>
+        <textarea id="comment" name="comment" rows="2" placeholder="Не подлежит ремонту" autofocus></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--danger" type="submit">Списать</button>
+        <a class="btn" href="/items/{{ item.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

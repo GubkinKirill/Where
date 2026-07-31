@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set section = 'directories' %}
+{% block title %}Справочники — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head"><h1>Справочники</h1></div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for spec in directories %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title"><a href="/directories/{{ spec.slug }}">{{ spec.title }}</a></div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

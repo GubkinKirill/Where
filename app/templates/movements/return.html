@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}Возврат {{ item.inv_number }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="/items">Единицы</a> / <a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / возврат</div>
+<h1 style="margin-bottom:16px">Принять возврат</h1>
+
+<section class="card" style="max-width:560px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+    </div>
+
+    <form method="post" action="/items/{{ item.id }}/return">
+      <div class="form-row">
+        <label for="storage_place_id">Куда кладём <span class="req">*</span></label>
+        <select id="storage_place_id" name="storage_place_id" required autofocus>
+          <option value="">— выберите место хранения —</option>
+          {% for place in storage_places %}
+            <option value="{{ place.id }}">{{ place.full_path }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment" placeholder="Состояние при приёме">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" style="flex:1; justify-content:center" type="submit">Принять</button>
+        <a class="btn" href="/items/{{ item.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

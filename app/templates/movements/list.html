@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set section = 'movements' %}
+{% block title %}Перемещения — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head"><h1>Журнал перемещений</h1></div>
+<div class="count">Последние {{ movements | length }} записей</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not movements %}
+      <div class="empty-state">Журнал пуст.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Когда</th>
+            <th>Единица</th>
+            <th>Основание</th>
+            <th>Откуда → куда</th>
+            <th>Кто внёс</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for movement in movements %}
+          <tr>
+            <td>{{ movement.moved_at | dt }}</td>
+            <td>
+              <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+              <div class="nested-mark">{{ movement.item.name }}</div>
+            </td>
+            <td>{{ movement.reason | reason_label }}</td>
+            <td>
+              {% if movement.from_kind %}{{ movement.from_label }} → {% endif %}{{ movement.to_label }}
+              {% if movement.comment %}<div class="nested-mark">«{{ movement.comment }}»</div>{% endif %}
+            </td>
+            <td>{{ movement.moved_by.display_name if movement.moved_by else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

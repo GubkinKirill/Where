@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% set section = 'directories' %}
+{% block title %}{{ spec.title }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/directories">Справочники</a> / <a href="/directories/{{ spec.slug }}">{{ spec.title }}</a>
+</div>
+<h1 style="margin-bottom:16px">{{ 'Изменить' if record else 'Добавить' }} {{ spec.one }}</h1>
+
+<section class="card" style="max-width:560px">
+  <div class="card__body">
+    <form method="post" action="/directories/{{ spec.slug }}{{ '/' ~ record.id if record else '/new' }}">
+      {% for field in spec.fields %}
+        {% set value = values.get(field.name, '') %}
+
+        {% if field.kind == 'checkbox' %}
+          <div class="form-row check">
+            <label>
+              <input type="checkbox" name="{{ field.name }}" value="1" {{ 'checked' if value }}>
+              {{ field.label }}
+            </label>
+          </div>
+
+        {% elif field.kind == 'select' %}
+          <div class="form-row">
+            <label for="{{ field.name }}">{{ field.label }}{% if field.required %} <span class="req">*</span>{% endif %}</label>
+            <select id="{{ field.name }}" name="{{ field.name }}">
+              <option value="">— не указано —</option>
+              {% for option_value, option_label in options[field.options] %}
+                <option value="{{ option_value }}" {{ 'selected' if value|string == option_value|string }}>{{ option_label }}</option>
+              {% endfor %}
+            </select>
+            {% if field.hint %}<div class="hint">{{ field.hint }}</div>{% endif %}
+          </div>
+
+        {% elif field.kind == 'textarea' or field.kind == 'list' %}
+          <div class="form-row">
+            <label for="{{ field.name }}">{{ field.label }}</label>
+            <textarea id="{{ field.name }}" name="{{ field.name }}" rows="3">{{ value }}</textarea>
+            {% if field.hint %}<div class="hint">{{ field.hint }}</div>{% endif %}
+          </div>
+
+        {% else %}
+          <div class="form-row">
+            <label for="{{ field.name }}">{{ field.label }}{% if field.required %} <span class="req">*</span>{% endif %}</label>
+            <input type="{{ 'number' if field.kind == 'number' else 'text' }}"
+                   id="{{ field.name }}" name="{{ field.name }}" value="{{ value }}"
+                   {{ 'required' if field.required }}>
+            {% if field.hint %}<div class="hint">{{ field.hint }}</div>{% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Сохранить</button>
+        <a class="btn" href="/directories/{{ spec.slug }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

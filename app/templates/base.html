@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Учёт техники{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/app.css">
+<script src="/static/js/htmx.min.js" defer></script>
+</head>
+<body>
+
+{% if user %}
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="/items">Учёт техники</a>
+    <nav class="nav">
+      <a href="/items" class="{{ 'is-active' if section == 'items' }}">Единицы</a>
+      <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
+      <a href="/directories" class="{{ 'is-active' if section == 'directories' }}">Справочники</a>
+    </nav>
+    <span class="topbar__user desktop-only">{{ user.display_name }} · {{ user.role | role_label }}</span>
+    <form method="post" action="/logout">
+      <button class="btn btn--sm btn--ghost" type="submit">Выйти</button>
+    </form>
+  </div>
+</header>
+{% endif %}
+
+<main class="page{% block page_class %}{% endblock %}">
+  {% if flash %}
+    <div class="flash flash--{{ flash.kind }}">{{ flash.text }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="flash flash--error">{{ error }}</div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+{% block after %}{% endblock %}
+</body>
+</html>
