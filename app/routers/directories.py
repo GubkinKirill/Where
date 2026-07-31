@@ -41,6 +41,8 @@ class Directory:
     fields: tuple[Field, ...]
     columns: tuple[tuple[str, str], ...]
     order: Callable[[], Any]
+    # if set, the first column links to this record's own page
+    card_url: Optional[str] = None
 
 
 DIRECTORIES: dict[str, Directory] = {
@@ -92,6 +94,7 @@ DIRECTORIES: dict[str, Directory] = {
             ("is_active", "Работает"),
         ),
         order=lambda: (Employee.full_name,),
+        card_url="/employees",
     ),
     "departments": Directory(
         slug="departments",

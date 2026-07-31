@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% set section = 'directories' %}
+{% set section = 'employees' if spec.slug == 'employees' else 'directories' %}
 {% block title %}{{ spec.title }} — Учёт техники{% endblock %}
 
 {% block content %}
@@ -29,7 +29,15 @@
         <tbody>
           {% for row in rows %}
           <tr>
-            {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
+            {% for cell in row.cells %}
+              <td>
+                {%- if loop.first and spec.card_url -%}
+                  <a href="{{ spec.card_url }}/{{ row.id }}">{{ cell }}</a>
+                {%- else -%}
+                  {{ cell }}
+                {%- endif -%}
+              </td>
+            {% endfor %}
             {% if user.can(UserRole.ADMIN) %}
             <td style="text-align:right; white-space:nowrap">
               <a class="btn btn--sm btn--ghost" href="/directories/{{ spec.slug }}/{{ row.id }}">Изменить</a>

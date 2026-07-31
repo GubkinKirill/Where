@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'employees' %}
+{% set can_edit = user.can(UserRole.EDITOR) %}
+{% block title %}{{ employee.short_name }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/directories/employees">Сотрудники</a></div>
+    <h1>{{ employee.full_name }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      {% if employee.is_active %}
+        <span class="badge badge--in_use">Работает</span>
+      {% else %}
+        <span class="badge badge--written_off">Уволен</span>
+      {% endif %}
+      {% if employee.position %}<span class="type-chip">{{ employee.position }}</span>{% endif %}
+      {% if employee.department %}<span class="type-chip">{{ employee.department }}</span>{% endif %}
+      {% if employee.default_room %}<span class="type-chip">каб. {{ employee.default_room.number }}</span>{% endif %}
+    </div>
+  </div>
+
+  {% if can_edit %}
+  <div class="actions">
+    {% if user.can(UserRole.ADMIN) %}
+      <a class="btn btn--ghost" href="/directories/employees/{{ employee.id }}">Изменить</a>
+    {% endif %}
+    {% if employee.is_active %}
+      <form method="post" action="/employees/{{ employee.id }}/dismiss"
+            onsubmit="return confirm('Отметить сотрудника уволенным?')">
+        <button class="btn btn--danger" type="submit">Уволен</button>
+      </form>
+    {% else %}
+      <form method="post" action="/employees/{{ employee.id }}/restore">
+        <button class="btn" type="submit">Вернуть в работающие</button>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if not employee.is_active and items %}
+<div class="flash flash--warn">
+  Сотрудник уволен, но за ним числится единиц: {{ items | length }}.
+  Передайте их другому сотруднику или примите возврат на склад — техника не спишется сама.
+</div>
+{% endif %}
+
+<div class="cols">
+  <div>
+    <section class="card">
+      <div class="card__head"><h2>Числится за сотрудником — {{ items | length }}</h2></div>
+      <div class="card__body card__body--flush">
+        {% if not items %}
+          <div class="empty-state">Техники за сотрудником нет.</div>
+        {% else %}
+        <ul class="rows">
+          {% for item in items %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title">
+                <a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a> {{ item.name }}
+              </div>
+              <div class="rows__sub">
+                {{ item.type.name }} · с {{ item.loc_since | d }}
+                {%- set issue = open_issues.get(item.id) %}
+                {%- if issue and issue.expected_return_date %}
+                  · возврат до {{ issue.expected_return_date | d }}{% if issue.is_overdue %}, просрочен{% endif %}
+                {%- endif %}
+              </div>
+            </div>
+            {{ ui.status_badge(item.status) }}
+            {% if can_edit %}
+              <a class="btn btn--sm btn--ghost" href="/items/{{ item.id }}/return">Принять</a>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div>
+    {% if can_edit and items %}
+    <section class="card">
+      <div class="card__head"><h2>Передать всё другому сотруднику</h2></div>
+      <div class="card__body">
+        <form method="post" action="/employees/{{ employee.id }}/transfer">
+          <div class="form-row">
+            <label for="target_id">Кому <span class="req">*</span></label>
+            <select id="target_id" name="target_id" required>
+              <option value="">— выберите сотрудника —</option>
+              {% for colleague in colleagues %}
+                <option value="{{ colleague.id }}">
+                  {{ colleague.short_name }}{% if colleague.position %} · {{ colleague.position }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="hint">Все {{ items | length }} ед. перейдут одним действием, на каждую будет своя запись в журнале.</div>
+          </div>
+          <div class="form-row">
+            <label for="comment">Комментарий</label>
+            <input type="text" id="comment" name="comment" placeholder="Приказ о переводе">
+          </div>
+          <button class="btn btn--primary" type="submit">Передать</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <div class="card__head"><h2>Ещё</h2></div>
+      <div class="card__body">
+        <p style="margin:0"><a href="/items?employee_id={{ employee.id }}">Показать в общем списке единиц</a></p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

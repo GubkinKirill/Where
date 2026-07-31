@@ -5,7 +5,7 @@
 {% macro location_cell(item) -%}
 <span>{{ item.loc_kind | location_kind_icon }}</span>
 {%- if item.loc_kind == LocationKind.PERSON %}
-  <a href="/items?employee_id={{ item.loc_employee_id }}">{{ item.employee.short_name if item.employee else '—' }}</a>{% if item.room %}, каб. <a href="/items?room_id={{ item.room.id }}">{{ item.room.number }}</a>{% endif %}
+  <a href="/employees/{{ item.loc_employee_id }}">{{ item.employee.short_name if item.employee else '—' }}</a>{% if item.room %}, каб. <a href="/items?room_id={{ item.room.id }}">{{ item.room.number }}</a>{% endif %}
 {%- elif item.loc_kind == LocationKind.STORAGE %}
   <a href="/items?storage_place_id={{ item.loc_storage_place_id }}">{{ item.storage_place.full_path if item.storage_place else '—' }}</a>
 {%- elif item.loc_kind == LocationKind.INSIDE %}
