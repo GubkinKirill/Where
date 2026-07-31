@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Выдать PC-0014 — Учёт техники</title>
+<link rel="stylesheet" href="app.css">
+<style>
+  /* стили формы выдачи — уедут в app.css, здесь для наглядности */
+  .form-row { margin-bottom: 14px; }
+  .form-row > label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+  .form-row input[type=text], .form-row input[type=date], .form-row select, .form-row textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong);
+    border-radius: 6px; background: #fff; font: inherit; font-size: 15px; color: var(--text);
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent);
+  }
+  .picker { border: 1px solid var(--border); border-radius: 6px; margin-top: 6px; overflow: hidden; }
+  .picker li { display: block; padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .picker li:last-child { border-bottom: 0; }
+  .picker li:hover, .picker li.is-sel { background: var(--accent-soft); }
+  .picker__sub { color: var(--muted); font-size: 13px; }
+  details.more { margin: 4px 0 16px; }
+  details.more > summary { cursor: pointer; color: var(--accent); font-size: 14px; padding: 6px 0; }
+  .subject { display: flex; gap: 10px; align-items: center; padding: 11px 14px;
+             background: var(--accent-soft); border-radius: 6px; margin-bottom: 18px; }
+  @media (prefers-color-scheme: dark) {
+    .form-row input[type=text], .form-row input[type=date], .form-row select, .form-row textarea { background: #232933; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="index.html">Учёт техники</a>
+    <nav class="nav">
+      <a href="index.html">Единицы</a>
+      <a href="#">Склад</a>
+      <a href="#">Расходники</a>
+      <a href="#">Сотрудники</a>
+      <a href="#">Отчёты</a>
+      <a href="#">Сверка</a>
+    </nav>
+    <span class="topbar__user desktop-only">Губкин К. · редактор</span>
+  </div>
+</header>
+
+<main class="page" style="max-width:560px">
+
+  <div class="crumbs"><a href="index.html">Единицы</a> / <a href="item.html">PC-0014</a> / Выдача</div>
+  <h1 style="margin-bottom:16px">Выдать сотруднику</h1>
+
+  <section class="card">
+    <div class="card__body">
+
+      <div class="subject">
+        <span class="inv" style="font-size:16px">PC-0014</span>
+        <span>Системный блок HP ProDesk 400 G6</span>
+      </div>
+
+      <form onsubmit="return false">
+        <div class="form-row">
+          <label for="emp">Кому <span style="color:#b3261e">*</span></label>
+          <input type="text" id="emp" value="петр" autocomplete="off" placeholder="Начните вводить фамилию">
+          <!-- выпадающий список с поиском, подгружается HTMX по вводу -->
+          <ul class="picker rows">
+            <li class="is-sel">Петров Иван Сергеевич<div class="picker__sub">Инженер-технолог · отдел 235 · каб. 312</div></li>
+            <li>Петрова Мария Львовна<div class="picker__sub">Бухгалтер · отдел 117 · каб. 208</div></li>
+            <li>Петренко Олег Юрьевич<div class="picker__sub">Слесарь КИПиА · отдел 235 · каб. 114</div></li>
+          </ul>
+        </div>
+
+        <details class="more">
+          <summary>Дополнительно</summary>
+          <div style="padding-top:10px">
+            <div class="form-row">
+              <label for="room">Кабинет</label>
+              <select id="room">
+                <option>312 — из карточки сотрудника</option>
+                <option>208</option>
+                <option>401</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="ret">Ожидаемый возврат</label>
+              <input type="date" id="ret">
+            </div>
+            <div class="form-row">
+              <label for="cm">Комментарий</label>
+              <textarea id="cm" rows="2" placeholder="Например: взамен вышедшего из строя PC-0009"></textarea>
+            </div>
+            <div class="form-row">
+              <label><input type="checkbox" checked> Переместить вместе с содержимым (4 единицы)</label>
+            </div>
+          </div>
+        </details>
+
+        <div class="actions">
+          <button class="btn btn--primary" style="flex:1; justify-content:center">Выдать</button>
+          <a href="item.html" class="btn">Отмена</a>
+        </div>
+      </form>
+
+    </div>
+  </section>
+
+  <p style="color:var(--muted); font-size:13px">
+    Обязательное поле одно. Всё остальное скрыто за «дополнительно» — выдача занимает два касания и подтверждение.
+  </p>
+
+</main>
+
+</body>
+</html>

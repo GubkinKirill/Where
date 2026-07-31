@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Единицы учёта — Учёт техники</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="index.html">Учёт техники</a>
+    <nav class="nav">
+      <a href="index.html" class="is-active">Единицы</a>
+      <a href="#">Склад</a>
+      <a href="#">Расходники</a>
+      <a href="#">Сотрудники</a>
+      <a href="#">Отчёты</a>
+      <a href="#">Сверка</a>
+    </nav>
+    <span class="topbar__user desktop-only">Губкин К. · редактор</span>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="page__head">
+    <h1>Единицы учёта</h1>
+    <div class="actions">
+      <button class="btn">Печать наклеек</button>
+      <button class="btn">Экспорт в Excel</button>
+      <button class="btn btn--primary">Добавить единицу</button>
+    </div>
+  </div>
+
+  <form class="search" onsubmit="return false">
+    <input type="search" placeholder="Номер, старый номер, серийный, модель, ФИО…" autocomplete="off">
+    <button class="btn btn--primary">Найти</button>
+  </form>
+
+  <div class="filters">
+    <select><option>Все типы</option><option>Системный блок</option><option>Монитор</option><option>Модуль памяти</option><option>Raspberry Pi</option></select>
+    <select><option>Все статусы</option><option>В работе</option><option>В резерве</option><option>Некомплект</option><option>На разбор</option><option>В ремонте</option></select>
+    <select><option>Любое размещение</option><option>У сотрудника</option><option>На складе</option><option>В кабинете</option><option>Внутри другой единицы</option><option>Передано вовне</option></select>
+    <select><option>Все кабинеты</option><option>208</option><option>312</option><option>401</option></select>
+    <select><option>Все отделы</option><option>235 — Технический</option><option>117 — Бухгалтерия</option></select>
+    <button class="btn btn--sm btn--ghost">Сбросить</button>
+  </div>
+
+  <div class="count">Найдено 6 из 214</div>
+
+  <section class="card">
+    <div class="card__body card__body--flush">
+
+      <!-- ДЕСКТОП: таблица -->
+      <div class="table-wrap desktop-only">
+        <table class="list">
+          <thead>
+            <tr>
+              <th>Номер</th>
+              <th>Название</th>
+              <th>Тип</th>
+              <th>Статус</th>
+              <th>Где сейчас</th>
+              <th>Изменено</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="item.html" class="inv">PC-0014</a><div class="nested-mark">235-70</div></td>
+              <td>Системный блок HP ProDesk 400 G6</td>
+              <td><span class="type-chip">Системный блок</span></td>
+              <td><span class="badge badge--in_use">В работе</span></td>
+              <td>👤 <a href="#">Петров И. С.</a>, каб. 312</td>
+              <td>12.02.2024</td>
+            </tr>
+            <tr>
+              <td><span class="inv">RAM-0023</span></td>
+              <td><span class="nested-mark">└</span> Kingston 8 ГБ DDR4-2666</td>
+              <td><span class="type-chip">Модуль памяти</span></td>
+              <td><span class="badge badge--in_use">В работе</span></td>
+              <td>📦 внутри <a href="item.html" class="inv">PC-0014</a></td>
+              <td>12.02.2024</td>
+            </tr>
+            <tr>
+              <td><span class="inv">MON-0007</span><div class="nested-mark">235-71</div></td>
+              <td>Монитор Dell P2419H 24"</td>
+              <td><span class="type-chip">Монитор</span></td>
+              <td><span class="badge badge--in_use">В работе</span></td>
+              <td>👤 <a href="#">Петров И. С.</a>, каб. 312</td>
+              <td>12.02.2024</td>
+            </tr>
+            <tr>
+              <td><span class="inv">PC-0009</span></td>
+              <td>Системный блок Dell OptiPlex 3050</td>
+              <td><span class="type-chip">Системный блок</span></td>
+              <td><span class="badge badge--donor">На разбор</span></td>
+              <td>🗄 Шкаф 1 / Полка 3</td>
+              <td>03.02.2024</td>
+            </tr>
+            <tr>
+              <td><span class="inv">RPI-0004</span></td>
+              <td>Raspberry Pi 4B 4 ГБ — стенд опроса счётчиков</td>
+              <td><span class="type-chip">Raspberry Pi</span></td>
+              <td><span class="badge badge--in_use">В работе</span></td>
+              <td>🚪 кабинет <a href="#">401</a></td>
+              <td>19.06.2025</td>
+            </tr>
+            <tr>
+              <td><span class="inv">PSU-0005</span></td>
+              <td>Блок питания Chieftec 500 Вт</td>
+              <td><span class="type-chip">Блок питания</span></td>
+              <td><span class="badge badge--reserve">В резерве</span></td>
+              <td>🗄 Шкаф 2 / Полка 1 / Ячейка A</td>
+              <td>21.01.2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- МОБИЛЬНЫЙ: карточки -->
+      <ul class="rows mobile-only">
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><a href="item.html" class="inv">PC-0014</a> <span class="badge badge--in_use">В работе</span></div>
+            <div class="rows__sub">Системный блок HP ProDesk 400 G6</div>
+            <div class="rows__sub">👤 Петров И. С., каб. 312</div>
+          </div>
+        </li>
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">RAM-0023</span> <span class="badge badge--in_use">В работе</span></div>
+            <div class="rows__sub">Kingston 8 ГБ DDR4-2666</div>
+            <div class="rows__sub">📦 внутри PC-0014</div>
+          </div>
+        </li>
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">MON-0007</span> <span class="badge badge--in_use">В работе</span></div>
+            <div class="rows__sub">Монитор Dell P2419H 24"</div>
+            <div class="rows__sub">👤 Петров И. С., каб. 312</div>
+          </div>
+        </li>
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">PC-0009</span> <span class="badge badge--donor">На разбор</span></div>
+            <div class="rows__sub">Системный блок Dell OptiPlex 3050</div>
+            <div class="rows__sub">🗄 Шкаф 1 / Полка 3</div>
+          </div>
+        </li>
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">RPI-0004</span> <span class="badge badge--in_use">В работе</span></div>
+            <div class="rows__sub">Raspberry Pi 4B 4 ГБ</div>
+            <div class="rows__sub">🚪 кабинет 401</div>
+          </div>
+        </li>
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">PSU-0005</span> <span class="badge badge--reserve">В резерве</span></div>
+            <div class="rows__sub">Блок питания Chieftec 500 Вт</div>
+            <div class="rows__sub">🗄 Шкаф 2 / Полка 1 / Ячейка A</div>
+          </div>
+        </li>
+      </ul>
+
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

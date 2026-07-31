@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC-0014 — Учёт техники</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="index.html">Учёт техники</a>
+    <nav class="nav">
+      <a href="index.html" class="is-active">Единицы</a>
+      <a href="#">Склад</a>
+      <a href="#">Расходники</a>
+      <a href="#">Сотрудники</a>
+      <a href="#">Отчёты</a>
+      <a href="#">Сверка</a>
+    </nav>
+    <span class="topbar__user desktop-only">Губкин К. · редактор</span>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="page__head">
+    <div>
+      <div class="crumbs"><a href="index.html">Единицы</a> / Системные блоки</div>
+      <h1><span class="inv">PC-0014</span> · Системный блок HP ProDesk 400 G6</h1>
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+        <span class="badge badge--in_use">В работе</span>
+        <span class="type-chip">Системный блок</span>
+        <span class="type-chip">старый номер 235-70</span>
+      </div>
+    </div>
+    <div class="actions desktop-only">
+      <button class="btn btn--primary">Выдать</button>
+      <button class="btn">Переместить</button>
+      <button class="btn">Установить компонент</button>
+      <button class="btn btn--ghost">Изменить</button>
+      <button class="btn btn--danger">Списать</button>
+    </div>
+  </div>
+
+  <div class="cols">
+
+    <!-- ЛЕВАЯ КОЛОНКА -->
+    <div>
+
+      <section class="card">
+        <div class="card__head"><h2>Основное</h2><button class="btn btn--sm btn--ghost">Изменить</button></div>
+        <div class="card__body">
+          <dl class="kv">
+            <dt>Инвентарный номер</dt><dd class="inv">PC-0014</dd>
+            <dt>Прежний номер</dt><dd>235-70</dd>
+            <dt>Тип</dt><dd>Системный блок (PC)</dd>
+            <dt>Производитель, модель</dt><dd>HP, ProDesk 400 G6 SFF</dd>
+            <dt>Серийный номер</dt><dd class="inv">CZC0123XYZ</dd>
+            <dt>Статус</dt><dd><span class="badge badge--in_use">В работе</span></dd>
+            <dt>Состояние</dt><dd>Не работает один передний USB-порт</dd>
+            <dt>Дата покупки</dt><dd>14.03.2021</dd>
+            <dt>Гарантия до</dt><dd>14.03.2024 <span class="empty">— истекла</span></dd>
+            <dt>Заметки</dt><dd class="empty">—</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head">
+          <h2>Состав — 4 единицы</h2>
+          <button class="btn btn--sm">Установить компонент</button>
+        </div>
+        <div class="card__body card__body--flush">
+          <ul class="rows">
+            <li>
+              <div class="rows__main">
+                <div class="rows__title"><a href="#" class="inv">RAM-0023</a> Kingston 8 ГБ DDR4-2666</div>
+                <div class="rows__sub">Модуль памяти · установлен 12.02.2024</div>
+              </div>
+              <span class="badge badge--in_use">В работе</span>
+              <button class="btn btn--sm btn--ghost">Изъять</button>
+            </li>
+            <li>
+              <div class="rows__main">
+                <div class="rows__title"><a href="#" class="inv">RAM-0024</a> Kingston 8 ГБ DDR4-2666</div>
+                <div class="rows__sub">Модуль памяти · установлен 12.02.2024</div>
+              </div>
+              <span class="badge badge--in_use">В работе</span>
+              <button class="btn btn--sm btn--ghost">Изъять</button>
+            </li>
+            <li>
+              <div class="rows__main">
+                <div class="rows__title"><a href="#" class="inv">SSD-0011</a> Kingston A400 480 ГБ</div>
+                <div class="rows__sub">Накопитель SSD · установлен 12.02.2024</div>
+              </div>
+              <span class="badge badge--in_use">В работе</span>
+              <button class="btn btn--sm btn--ghost">Изъять</button>
+            </li>
+            <li>
+              <div class="rows__main">
+                <div class="rows__title"><a href="#" class="inv">HDD-0031</a> WD Blue 1 ТБ</div>
+                <div class="rows__sub">Жёсткий диск · установлен 05.09.2025 · щёлкает при старте</div>
+              </div>
+              <span class="badge badge--repair">В ремонте</span>
+              <button class="btn btn--sm btn--ghost">Изъять</button>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head"><h2>Фотографии</h2><button class="btn btn--sm btn--ghost">Загрузить</button></div>
+        <div class="card__body">
+          <div class="photos">
+            <div class="photo">фото 1</div>
+            <div class="photo">наклейка</div>
+            <div class="photo">+</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ПРАВАЯ КОЛОНКА -->
+    <div>
+
+      <section class="card">
+        <div class="card__head"><h2>Где сейчас</h2><button class="btn btn--sm">Переместить</button></div>
+        <div class="card__body">
+          <div class="placement">
+            <div class="placement__icon">👤</div>
+            <div class="placement__main">
+              <div class="placement__title"><a href="#">Петров И. С.</a></div>
+              <div class="placement__sub">Инженер-технолог · отдел 235 · кабинет <a href="#">312</a></div>
+              <div class="placement__sub">Здесь с 12.02.2024 — 2 года 5 месяцев</div>
+            </div>
+          </div>
+          <div class="note">Ожидаемый возврат не указан — выдача бессрочная.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head"><h2>QR-код</h2><button class="btn btn--sm">Печать наклейки</button></div>
+        <div class="card__body">
+          <div class="qr">
+            <div class="qr__code"><img src="qr-pc-0014.svg" width="88" height="88" alt="QR PC-0014"></div>
+            <div>
+              <div class="inv" style="font-size:19px">PC-0014</div>
+              <div class="qr__link">http://inv.local/i/PC-0014</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head"><h2>История перемещений</h2><a href="#" style="font-size:13px">Вся история</a></div>
+        <div class="card__body card__body--flush">
+          <ul class="timeline">
+            <li class="is-current">
+              <div class="timeline__date">12.02.2024, 09:14</div>
+              <div class="timeline__what">Выдача</div>
+              <div class="timeline__where">Склад · Шкаф 1 / Полка 2 → <a href="#">Петров И. С.</a>, каб. 312</div>
+              <div class="timeline__meta">внёс Губкин К. · «взамен вышедшего из строя PC-0009»</div>
+            </li>
+            <li>
+              <div class="timeline__date">12.02.2024, 08:50</div>
+              <div class="timeline__what">Установка в состав</div>
+              <div class="timeline__where">Добавлены <a href="#" class="inv">RAM-0023</a>, <a href="#" class="inv">RAM-0024</a>, <a href="#" class="inv">SSD-0011</a></div>
+              <div class="timeline__meta">внёс Губкин К.</div>
+            </li>
+            <li>
+              <div class="timeline__date">03.11.2023, 15:22</div>
+              <div class="timeline__what">Перемещение на склад</div>
+              <div class="timeline__where"><a href="#">Сидорова А. В.</a>, каб. 208 → Шкаф 1 / Полка 2</div>
+              <div class="timeline__meta">внёс Губкин К. · «сотрудник уволен»</div>
+            </li>
+            <li>
+              <div class="timeline__date">18.05.2021, 11:03</div>
+              <div class="timeline__what">Выдача</div>
+              <div class="timeline__where">Склад · Шкаф 1 / Полка 1 → <a href="#">Сидорова А. В.</a>, каб. 208</div>
+              <div class="timeline__meta">внёс Губкин К.</div>
+            </li>
+            <li>
+              <div class="timeline__date">14.03.2021, 10:00</div>
+              <div class="timeline__what">Постановка на учёт</div>
+              <div class="timeline__where">Склад · Шкаф 1 / Полка 1</div>
+              <div class="timeline__meta">внёс Губкин К.</div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- мобильная панель действий -->
+<div class="actionbar mobile-only">
+  <button class="btn btn--primary">Выдать</button>
+  <button class="btn">Переместить</button>
+  <button class="btn">Компонент</button>
+  <button class="btn btn--ghost">⋯</button>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+# task description, not part of the codebase
+inventory-app-prompt.md
+
+# python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# app data — never commit
+.env
+*.db
+*.db-journal
+*.sqlite3
+data/
+media/
+photos/
+backups/
+
+# editors / os
+.idea/
+.vscode/
+*.swp
+.DS_Store
