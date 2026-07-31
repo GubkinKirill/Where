@@ -1,7 +1,8 @@
-"""Fill an empty database with demo data: python -m scripts.seed_demo
+"""Fill an empty database with a small demo set: python -m scripts.seed_demo
 
-Everything goes in through the services, so the movement log is real: every item
-has a history you can click through.
+Deliberately small — a handful of items, just enough to see every kind of
+placement. Everything goes in through the services, so the movement log is real:
+each item has a history you can click through.
 """
 
 import sys
@@ -45,8 +46,8 @@ ITEM_TYPES = [
     ("OTHER", "Прочее", False, "•", [], 200),
 ]
 
-# where the demo numbering starts, purely so the demo matches the mockups
-NUMBER_HEAD_START = {"PC": 8, "MON": 6, "RAM": 22, "SSD": 10, "HDD": 30, "RPI": 3, "PSU": 4}
+# where the demo numbering starts, purely so the numbers look lived-in
+NUMBER_HEAD_START = {"PC": 13, "MON": 6, "RAM": 22, "SSD": 10, "RPI": 3, "PSU": 4}
 
 
 def main() -> int:
@@ -120,7 +121,6 @@ def _seed_rooms(db) -> dict[str, Room]:
         "312": Room(number="312", floor=3, description="Технический отдел"),
         "208": Room(number="208", floor=2, description="Бухгалтерия"),
         "401": Room(number="401", floor=4, description="Серверная"),
-        "114": Room(number="114", floor=1, description="Мастерская"),
     }
     db.add_all(rooms.values())
     return rooms
@@ -136,34 +136,20 @@ def _seed_departments(db) -> dict[str, Department]:
 
 
 def _seed_storage(db) -> dict[str, StoragePlace]:
-    cabinet1 = StoragePlace(code="CAB-01", name="Шкаф 1", kind=StoragePlaceKind.CABINET)
-    cabinet2 = StoragePlace(code="CAB-02", name="Шкаф 2", kind=StoragePlaceKind.CABINET)
-    db.add_all([cabinet1, cabinet2])
+    cabinet = StoragePlace(code="CAB-01", name="Шкаф 1", kind=StoragePlaceKind.CABINET)
+    db.add(cabinet)
     db.flush()
 
     places = {
-        "cab1": cabinet1,
-        "cab2": cabinet2,
+        "cabinet": cabinet,
         "shelf1": StoragePlace(
-            code="SHELF-01", name="Полка 1", kind=StoragePlaceKind.SHELF, parent_id=cabinet1.id
+            code="SHELF-01", name="Полка 1", kind=StoragePlaceKind.SHELF, parent_id=cabinet.id
         ),
         "shelf2": StoragePlace(
-            code="SHELF-02", name="Полка 2", kind=StoragePlaceKind.SHELF, parent_id=cabinet1.id
-        ),
-        "shelf3": StoragePlace(
-            code="SHELF-03", name="Полка 3", kind=StoragePlaceKind.SHELF, parent_id=cabinet1.id
-        ),
-        "shelf4": StoragePlace(
-            code="SHELF-04", name="Полка 1", kind=StoragePlaceKind.SHELF, parent_id=cabinet2.id
+            code="SHELF-02", name="Полка 2", kind=StoragePlaceKind.SHELF, parent_id=cabinet.id
         ),
     }
     db.add_all(places.values())
-    db.flush()
-
-    places["cellA"] = StoragePlace(
-        code="CELL-A", name="Ячейка A", kind=StoragePlaceKind.CELL, parent_id=places["shelf4"].id
-    )
-    db.add(places["cellA"])
     return places
 
 
@@ -182,18 +168,6 @@ def _seed_employees(db, departments, rooms) -> dict[str, Employee]:
             department_id=departments["117"].id,
             default_room_id=rooms["208"].id,
         ),
-        "petrova": Employee(
-            full_name="Петрова Мария Львовна",
-            position="Бухгалтер",
-            department_id=departments["117"].id,
-            default_room_id=rooms["208"].id,
-        ),
-        "petrenko": Employee(
-            full_name="Петренко Олег Юрьевич",
-            position="Слесарь КИПиА",
-            department_id=departments["235"].id,
-            default_room_id=rooms["114"].id,
-        ),
     }
     db.add_all(employees.values())
     return employees
@@ -209,28 +183,8 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
 
     shelf1 = LocationRef.storage(places["shelf1"].id)
     shelf2 = LocationRef.storage(places["shelf2"].id)
-    shelf3 = LocationRef.storage(places["shelf3"].id)
-    cell_a = LocationRef.storage(places["cellA"].id)
 
-    # PC-0009 — donor, taken apart on a shelf
-    create(
-        "PC",
-        "Системный блок Dell OptiPlex 3050",
-        location=shelf3,
-        status=ItemStatus.DONOR,
-        manufacturer="Dell",
-        model="OptiPlex 3050 SFF",
-        serial_number="8HJ2K33",
-        legacy_number="235-42",
-        condition_note="Не стартует, подозрение на материнскую плату",
-        purchase_date=today - timedelta(days=2500),
-    )
-
-    # cosmetic: makes the demo machine below come out as PC-0014, as in the mockups
-    db.get(NumberSequence, "PC").last_value = 13
-    db.flush()
-
-    # PC-0014 — the machine from the mockups
+    # PC-0014 — a machine with components inside, currently with an employee
     pc = create(
         "PC",
         "Системный блок HP ProDesk 400 G6",
@@ -243,41 +197,21 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
         purchase_date=today - timedelta(days=1600),
         warranty_until=today - timedelta(days=500),
     )
-    inside_pc = LocationRef.inside(pc.id)
-
-    components = [
-        create("RAM", "Kingston 8 ГБ DDR4-2666", location=shelf1, manufacturer="Kingston"),
-        create("RAM", "Kingston 8 ГБ DDR4-2666", location=shelf1, manufacturer="Kingston"),
-        create("SSD", "Kingston A400 480 ГБ", location=shelf1, manufacturer="Kingston", model="A400"),
-    ]
 
     installed_at = datetime.now() - timedelta(days=880)
-    for component in components:
+    for type_code, name in [("RAM", "Kingston 8 ГБ DDR4-2666"), ("SSD", "Kingston A400 480 ГБ")]:
+        component = create(type_code, name, location=shelf1, manufacturer="Kingston")
         movements_service.move_item(
             db,
             item=component,
-            to=inside_pc,
+            to=LocationRef.inside(pc.id),
             reason=MovementReason.INSTALL,
             actor=editor,
             moved_at=installed_at,
         )
         component.status = ItemStatus.IN_USE
 
-    # a failing disk that is still inside the machine
-    hdd = create("HDD", "WD Blue 1 ТБ", location=shelf1, manufacturer="Western Digital")
-    movements_service.move_item(
-        db,
-        item=hdd,
-        to=inside_pc,
-        reason=MovementReason.INSTALL,
-        actor=editor,
-        moved_at=datetime.now() - timedelta(days=330),
-        comment="Добавлен для архива",
-    )
-    hdd.status = ItemStatus.REPAIR
-    hdd.condition_note = "Щёлкает при старте, данные перенесены"
-
-    # PC-0014 went to Sidorova, came back when she left, then went to Petrov
+    # history worth clicking through: issued, returned when she left, issued again
     movements_service.issue_item(
         db,
         item=pc,
@@ -300,7 +234,7 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
         item=pc,
         employee_id=employees["petrov"].id,
         actor=editor,
-        comment="Взамен вышедшего из строя PC-0009",
+        comment="Взамен вышедшего из строя системного блока",
         moved_at=datetime.now() - timedelta(days=880),
     )
 
@@ -317,15 +251,16 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
         db, item=monitor, employee_id=employees["petrov"].id, actor=editor
     )
 
+    # a spare sitting on a shelf
     create(
         "PSU",
         "Блок питания Chieftec 500 Вт",
-        location=cell_a,
+        location=shelf2,
         manufacturer="Chieftec",
         model="GPE-500S",
     )
 
-    # Raspberry Pi kit standing in the server room
+    # a single board computer standing in a room, with its own attributes
     pi = create(
         "RPI",
         "Raspberry Pi 4B 4 ГБ — стенд опроса счётчиков",
@@ -359,29 +294,6 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
         reason=MovementReason.TO_STORAGE,
         actor=editor,
         comment="Установлен на стойку",
-    )
-
-    sd_card = create("OTHER", "SD-карта SanDisk 32 ГБ", location=shelf2)
-    movements_service.move_item(
-        db,
-        item=sd_card,
-        to=LocationRef.inside(pi.id),
-        reason=MovementReason.INSTALL,
-        actor=editor,
-    )
-    sd_card.status = ItemStatus.IN_USE
-
-    # something handed over to another department
-    old_printer = create(
-        "PRN", "Принтер HP LaserJet 1020", location=shelf3, manufacturer="HP", model="LaserJet 1020"
-    )
-    movements_service.move_item(
-        db,
-        item=old_printer,
-        to=LocationRef.external("Отдел 117, Петровой М. Л."),
-        reason=MovementReason.TRANSFER_OUT,
-        actor=editor,
-        comment="Передан по служебной записке",
     )
 
 
