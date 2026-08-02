@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set section = 'reports' %}
+{% block title %}Неподтверждённые выдачи — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Выдано, но не подтверждено</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Сотрудник не отметил на странице «Моя техника», что получил вещь
+    </div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not movements %}
+      <div class="empty-state">Все выдачи подтверждены.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Когда выдано</th>
+            <th>Единица</th>
+            <th>Кому</th>
+            <th>Ждёт</th>
+            <th>Кто выдал</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for movement in movements %}
+          <tr>
+            <td>{{ movement.moved_at | dt }}</td>
+            <td>
+              <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+              <div class="nested-mark">{{ movement.item.name }}</div>
+            </td>
+            <td>
+              {% if movement.recipient %}
+                <a href="/employees/{{ movement.recipient.id }}">{{ movement.recipient.short_name }}</a>
+                {% if not movement.recipient.personnel_number %}
+                  <div class="nested-mark">нет табельного номера — подтвердить не сможет</div>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ movement.moved_at | since }}</td>
+            <td>{{ movement.moved_by.display_name if movement.moved_by else '—' }}</td>
+            <td style="text-align:right; white-space:nowrap">
+              <a class="btn btn--sm btn--ghost" href="/movements/{{ movement.id }}/act">Акт</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

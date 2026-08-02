@@ -24,6 +24,9 @@
 
   {% if can_edit %}
   <div class="actions">
+    {% if items %}
+      <a class="btn" href="/employees/{{ employee.id }}/act">Акт закрепления</a>
+    {% endif %}
     {% if user.can(UserRole.ADMIN) %}
       <a class="btn btn--ghost" href="/directories/employees/{{ employee.id }}">Изменить</a>
     {% endif %}

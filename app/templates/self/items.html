@@ -11,6 +11,37 @@
   <a class="btn btn--ghost" href="/my">Другой номер</a>
 </div>
 
+{% if pending %}
+<section class="card">
+  <div class="card__head">
+    <h2>Ждут вашего подтверждения — {{ pending | length }}</h2>
+  </div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for movement in pending %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ movement.item.inv_number }}</span> {{ movement.item.name }}
+          </div>
+          <div class="rows__sub">
+            Выдано {{ movement.moved_at | dt }}
+            {%- if movement.expected_return_date %} · вернуть до {{ movement.expected_return_date | d }}{% endif %}
+            {%- if movement.comment %} · «{{ movement.comment }}»{% endif %}
+          </div>
+        </div>
+        <form method="post" action="/my/confirm">
+          <input type="hidden" name="personnel_number" value="{{ personnel_number }}">
+          <input type="hidden" name="movement_id" value="{{ movement.id }}">
+          <button class="btn btn--sm btn--primary" type="submit">Получил</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
 {% if not items %}
   <section class="card"><div class="card__body">
     <div class="empty-state">За вами техника не числится.</div>
@@ -38,6 +69,7 @@
             {%- if issue and issue.expected_return_date %}
               · вернуть до {{ issue.expected_return_date | d }}{% if issue.is_overdue %}, срок прошёл{% endif %}
             {%- endif %}
+            {%- if issue and issue.acknowledged_at %} · получение подтверждено {{ issue.acknowledged_at | d }}{% endif %}
           </div>
           {% if contents.get(item.id) %}
             <div class="rows__sub">

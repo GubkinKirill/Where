@@ -232,6 +232,52 @@ def write_off_item(
     )
 
 
+def pending_acknowledgements(db: Session, employee: Employee) -> list[Movement]:
+    """Handovers this person has not confirmed yet."""
+    return list(
+        db.scalars(
+            select(Movement)
+            .where(
+                Movement.recipient_employee_id == employee.id,
+                Movement.reason == MovementReason.ISSUE,
+                Movement.returned_at.is_(None),
+                Movement.acknowledged_at.is_(None),
+            )
+            .order_by(Movement.moved_at.desc(), Movement.id.desc())
+        )
+    )
+
+
+def unacknowledged(db: Session) -> list[Movement]:
+    """Everything handed out and not confirmed — the report for the department."""
+    return list(
+        db.scalars(
+            select(Movement)
+            .where(
+                Movement.reason == MovementReason.ISSUE,
+                Movement.returned_at.is_(None),
+                Movement.acknowledged_at.is_(None),
+            )
+            .order_by(Movement.moved_at)
+        )
+    )
+
+
+def acknowledge(db: Session, *, movement: Movement, employee: Employee) -> Movement:
+    """The recipient confirms the handover. Only they can, and only once."""
+    if movement.recipient_employee_id != employee.id:
+        raise MoveError("Эта выдача оформлена на другого сотрудника.")
+    if movement.acknowledged_at is not None:
+        raise MoveError("Выдача уже подтверждена.")
+    if movement.returned_at is not None:
+        raise MoveError("Единица уже возвращена, подтверждать нечего.")
+
+    movement.acknowledged_at = now()
+    movement.acknowledged_by_employee_id = employee.id
+    db.flush()
+    return movement
+
+
 def history(db: Session, item: Item) -> list[Movement]:
     return list(
         db.scalars(

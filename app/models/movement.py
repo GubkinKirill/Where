@@ -34,6 +34,12 @@ class Movement(Base):
     expected_return_date: Mapped[Optional[date]] = mapped_column(default=None)
     returned_at: Mapped[Optional[datetime]] = mapped_column(default=None)
 
+    # the recipient confirming, by the number on their pass, that they got the thing
+    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(default=None)
+    acknowledged_by_employee_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("employees.id"), default=None
+    )
+
     # where it came from; empty on the very first record of an item
     from_kind: Mapped[Optional[LocationKind]] = mapped_column(
         enum_column(LocationKind), default=None
@@ -74,6 +80,15 @@ class Movement(Base):
     )
     to_employee: Mapped[Optional[Employee]] = relationship(foreign_keys=[to_employee_id])
     to_room: Mapped[Optional[Room]] = relationship(foreign_keys=[to_room_id])
+
+    @property
+    def needs_acknowledgement(self) -> bool:
+        """Handed to a person, still with them, not confirmed yet."""
+        return (
+            self.reason is MovementReason.ISSUE
+            and self.returned_at is None
+            and self.acknowledged_at is None
+        )
 
     @property
     def is_overdue(self) -> bool:

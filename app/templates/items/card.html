@@ -223,7 +223,10 @@
               {% if movement.moved_by %}внёс {{ movement.moved_by.display_name }}{% else %}автор не указан{% endif %}
               {%- if movement.expected_return_date %} · возврат до {{ movement.expected_return_date | d }}{% endif %}
               {%- if movement.returned_at %} · возвращено {{ movement.returned_at | d }}{% endif %}
+              {%- if movement.acknowledged_at %} · получение подтверждено {{ movement.acknowledged_at | d }}
+              {%- elif movement.needs_acknowledgement %} · получение не подтверждено{% endif %}
               {%- if movement.comment %} · «{{ movement.comment }}»{% endif %}
+              {%- if movement.recipient %} · <a href="/movements/{{ movement.id }}/act">акт</a>{% endif %}
             </div>
           </li>
           {% endfor %}

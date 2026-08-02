@@ -513,3 +513,33 @@ details.more > summary { cursor: pointer; color: var(--accent); font-size: 14px;
   .flash--warn { background: #33291a; border-color: #574526; color: #e6c98f; }
   .flash--error { background: #34211f; border-color: #5c3330; color: #f0a9a3; }
 }
+
+/* ---------- printable act ---------- */
+
+.sheet__title { font-size: 18px; text-align: center; margin-bottom: 4px; }
+.sheet__date { text-align: center; color: var(--muted); font-size: 13.5px; margin-bottom: 20px; }
+.sheet__head { grid-template-columns: 180px minmax(0, 1fr); margin-bottom: 18px; }
+.sheet__lead { font-size: 14px; margin: 14px 0; }
+.sheet__table { border: 1px solid var(--border); margin-top: 10px; }
+.sheet__table th, .sheet__table td { border: 1px solid var(--border); text-transform: none; }
+
+.sheet__signs { display: flex; gap: 40px; margin-top: 44px; }
+.sheet__sign { flex: 1; }
+.sheet__line { border-bottom: 1px solid var(--text); height: 28px; }
+.sheet__caption { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+@media print {
+  :root {
+    --bg: #fff; --surface: #fff; --text: #000;
+    --border: #999; --border-strong: #999; --muted: #444; --shadow: none;
+  }
+  body { background: #fff; color: #000; font-size: 12pt; }
+  .topbar, .no-print, .actionbar, .flash { display: none !important; }
+  .page { max-width: none; padding: 0; }
+  .card { border: 0; box-shadow: none; margin: 0; }
+  .card__body { padding: 0; }
+  a { color: #000; text-decoration: none; }
+  .sheet__table { page-break-inside: auto; }
+  .sheet__table tr { page-break-inside: avoid; }
+  @page { margin: 18mm 15mm; }
+}

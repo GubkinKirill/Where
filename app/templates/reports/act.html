@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set section = 'reports' %}
+{% block title %}{{ title }} — {{ employee.short_name }}{% endblock %}
+
+{% block content %}
+<div class="page__head no-print">
+  <div>
+    <div class="crumbs"><a href="/employees/{{ employee.id }}">{{ employee.short_name }}</a></div>
+    <h1>{{ title }}</h1>
+  </div>
+  <div class="actions">
+    <button class="btn btn--primary" onclick="window.print()">Печать</button>
+  </div>
+</div>
+
+<section class="card sheet">
+  <div class="card__body">
+    <h2 class="sheet__title">{{ title }}</h2>
+    <div class="sheet__date">от {{ issued_at | d }}</div>
+
+    <dl class="kv sheet__head">
+      <dt>Сотрудник</dt><dd>{{ employee.full_name }}</dd>
+      {% if employee.personnel_number %}<dt>Табельный номер</dt><dd>{{ employee.personnel_number }}</dd>{% endif %}
+      {% if employee.position %}<dt>Должность</dt><dd>{{ employee.position }}</dd>{% endif %}
+      {% if employee.department %}<dt>Отдел</dt><dd>{{ employee.department }}</dd>{% endif %}
+      {% if employee.default_room %}<dt>Кабинет</dt><dd>{{ employee.default_room.number }}</dd>{% endif %}
+    </dl>
+
+    <p class="sheet__lead">
+      {% if movement %}
+        Настоящим подтверждается передача сотруднику перечисленного ниже имущества.
+      {% else %}
+        За сотрудником числится следующее имущество.
+      {% endif %}
+    </p>
+
+    <table class="list sheet__table">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Инв. номер</th>
+          <th>Наименование</th>
+          <th>Тип</th>
+          <th>Серийный номер</th>
+          <th>Состояние</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="inv">{{ item.inv_number }}</td>
+          <td>
+            {{ item.name }}
+            {% if item.legacy_number %}<div class="nested-mark">прежний номер {{ item.legacy_number }}</div>{% endif %}
+          </td>
+          <td>{{ item.type.name }}</td>
+          <td class="inv">{{ item.serial_number or '—' }}</td>
+          <td>{{ item.condition_note or 'исправно' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="sheet__lead">Всего позиций: {{ items | length }}.</p>
+
+    {% if movement and movement.acknowledged_at %}
+      <p class="sheet__lead">
+        Получение подтверждено в системе {{ movement.acknowledged_at | dt }} по табельному номеру.
+      </p>
+    {% endif %}
+
+    <div class="sheet__signs">
+      <div class="sheet__sign">
+        <div class="sheet__line"></div>
+        <div class="sheet__caption">передал, подпись и расшифровка</div>
+      </div>
+      <div class="sheet__sign">
+        <div class="sheet__line"></div>
+        <div class="sheet__caption">принял, подпись и расшифровка</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
