@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% set section = 'kits' %}
+{% set lines = template.lines if template else [] %}
+{% block title %}Шаблон комплектности — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/kits">Комплекты</a> / <a href="/kits/templates">Шаблоны</a>
+</div>
+<h1 style="margin-bottom:16px">{{ 'Изменить шаблон' if template else 'Новый шаблон комплектности' }}</h1>
+
+<section class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" action="/kits/templates{{ '/' ~ template.id if template else '/new' }}">
+      <div class="form-row">
+        <label for="name">Название <span class="req">*</span></label>
+        <input type="text" id="name" name="name" value="{{ template.name if template else '' }}"
+               required autofocus placeholder="Комплект базовой станции">
+      </div>
+
+      <div class="form-row">
+        <label for="description">Описание</label>
+        <textarea id="description" name="description" rows="2">{{ template.description if template and template.description else '' }}</textarea>
+      </div>
+
+      <h2 style="margin:22px 0 10px">Что должно быть в комплекте</h2>
+      <div class="hint" style="margin-bottom:10px">
+        По одной строке на тип единицы. Пустые строки игнорируются, один тип — одна строка.
+      </div>
+
+      {% for line in lines %}
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Тип</label>
+          <select name="line_type_id">
+            <option value="">— убрать позицию —</option>
+            {% for type in types %}
+              <option value="{{ type.id }}" {{ 'selected' if line.item_type_id == type.id }}>{{ type.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Количество</label>
+          <input type="number" name="line_quantity" min="1" value="{{ line.quantity }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Уточнение</label>
+        <input type="text" name="line_note" value="{{ line.note or '' }}" placeholder="Например: кабель 5 м, N-типа">
+      </div>
+      {% endfor %}
+
+      {% for _ in range(blank_lines) %}
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Тип</label>
+          <select name="line_type_id">
+            <option value="">— не задано —</option>
+            {% for type in types %}
+              <option value="{{ type.id }}">{{ type.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Количество</label>
+          <input type="number" name="line_quantity" min="1" value="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Уточнение</label>
+        <input type="text" name="line_note" placeholder="необязательно">
+      </div>
+      {% endfor %}
+
+      <div class="form-row check">
+        <label>
+          <input type="checkbox" name="is_active" value="1" {{ 'checked' if not template or template.is_active }}>
+          Используется
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Сохранить</button>
+        <a class="btn" href="/kits/templates">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

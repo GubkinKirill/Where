@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% set section = 'kits' %}
+{% block title %}Комплекты — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Комплекты</h1>
+    <div class="crumbs" style="margin-top:6px">Собранность по шаблонам комплектности</div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/kits/templates">Шаблоны комплектности</a>
+  </div>
+</div>
+
+{% if not kits %}
+  <section class="card"><div class="card__body">
+    <div class="empty-state">
+      Комплектов пока нет.<br>
+      Заведите тип с признаком контейнера, создайте <a href="/kits/templates">шаблон комплектности</a>
+      и укажите его в карточке единицы.
+    </div>
+  </div></section>
+{% endif %}
+
+{% for kit in kits %}
+<section class="card">
+  <div class="card__head">
+    <h2>
+      <a href="/items/{{ kit.item.id }}" class="inv">{{ kit.item.inv_number }}</a>
+      {{ kit.item.name }}
+    </h2>
+    {% if kit.is_complete %}
+      <span class="badge badge--in_use">Комплект собран</span>
+    {% else %}
+      <span class="badge badge--incomplete">Не хватает: {{ kit.missing_total }}</span>
+    {% endif %}
+  </div>
+  <div class="card__body card__body--flush">
+    <div style="padding:10px 14px; color:var(--muted); font-size:13.5px">
+      Шаблон «{{ kit.template.name }}» · собрано {{ kit.present_total }} из {{ kit.required_total }}
+    </div>
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Позиция</th>
+            <th>Нужно</th>
+            <th>Есть</th>
+            <th>Не хватает</th>
+            <th>Подходит со склада</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in kit.lines %}
+          <tr>
+            <td>
+              {{ line.item_type.name }}
+              {% if line.note %}<div class="nested-mark">{{ line.note }}</div>{% endif %}
+            </td>
+            <td>{{ line.required }}</td>
+            <td>{{ line.present }}</td>
+            <td>
+              {% if line.missing %}<strong>{{ line.missing }}</strong>{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if not line.missing %}
+                —
+              {% elif line.spares %}
+                {% for spare in line.spares %}
+                  <a href="/items/{{ spare.id }}" class="inv">{{ spare.inv_number }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="nested-mark">на складе нет</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if kit.unexpected %}
+      <div style="padding:10px 14px; font-size:13.5px">
+        Сверх шаблона:
+        {% for extra in kit.unexpected %}
+          <a href="/items/{{ extra.id }}" class="inv">{{ extra.inv_number }}</a>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import app.services  # noqa: F401  registers the placement guard on all sessions
 from app.auth.deps import AccessDenied, AuthRequired
 from app.config import APP_DIR, settings
-from app.routers import auth, directories, employees, items, movements
+from app.routers import auth, directories, employees, items, kits, movements
 from app.templating import render
 
 settings.prepare_dirs()
@@ -17,6 +17,7 @@ app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(movements.router)
 app.include_router(employees.router)
+app.include_router(kits.router)
 app.include_router(directories.router)
 
 

@@ -27,6 +27,12 @@ class ItemForm(BaseModel):
     purchase_date: Optional[date] = None
     warranty_until: Optional[date] = None
     notes: Optional[str] = None
+    kit_template_id: Optional[int] = None
+
+    @field_validator("kit_template_id", mode="before")
+    @classmethod
+    def empty_template_is_none(cls, value):
+        return _blank_to_none(value)
 
     @field_validator(
         "legacy_number",

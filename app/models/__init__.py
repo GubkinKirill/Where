@@ -8,6 +8,7 @@ from app.models.enums import (
     UserRole,
 )
 from app.models.item import Item, ItemAttribute, ItemType, NumberSequence
+from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.movement import Movement
 from app.models.user import User
 
@@ -19,6 +20,8 @@ __all__ = [
     "ItemAttribute",
     "ItemStatus",
     "ItemType",
+    "KitTemplate",
+    "KitTemplateLine",
     "LocationKind",
     "Movement",
     "MovementReason",

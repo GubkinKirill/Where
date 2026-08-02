@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}Разбор {{ item.inv_number }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="/items">Единицы</a> / <a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / разбор</div>
+<h1 style="margin-bottom:16px">Разобрать состав</h1>
+
+<section class="card" style="max-width:560px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+    </div>
+
+    {% if not contents %}
+      <div class="empty-state">Состав пуст, разбирать нечего.</div>
+      <a class="btn" href="/items/{{ item.id }}">Назад</a>
+    {% else %}
+    <div class="flash flash--warn">
+      Будет изъято единиц: {{ contents | length }}. На каждую запишется своё перемещение.
+    </div>
+
+    <ul class="rows" style="margin-bottom:16px">
+      {% for child in contents %}
+        <li>
+          <div class="rows__main">
+            <div class="rows__title"><span class="inv">{{ child.inv_number }}</span> {{ child.name }}</div>
+            <div class="rows__sub">{{ child.type.name }}</div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <form method="post" action="/items/{{ item.id }}/disassemble">
+      <div class="form-row">
+        <label for="storage_place_id">Куда выкладываем <span class="req">*</span></label>
+        <select id="storage_place_id" name="storage_place_id" required>
+          <option value="">— выберите место хранения —</option>
+          {% for place in storage_places %}
+            <option value="{{ place.id }}">{{ place.full_path }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment" placeholder="Причина разбора">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--danger" type="submit">Разобрать</button>
+        <a class="btn" href="/items/{{ item.id }}">Отмена</a>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -8,6 +8,7 @@ from app.auth.deps import AdminUser, DbSession, EditorUser, ViewerUser
 from app.models.item import Item
 from app.schemas.item import ItemFilter, ItemForm
 from app.services import items as items_service
+from app.services import kits as kits_service
 from app.services import movements as movements_service
 from app.services import tree
 from app.services.errors import ServiceError
@@ -90,6 +91,8 @@ def item_card(
             "item": item,
             "contents": tree.contents(db, item),
             "ancestors": tree.ancestors(db, item),
+            "outermost": tree.outermost(db, item),
+            "kit": kits_service.status(db, item),
             "history": movements_service.history(db, item),
             "open_issue": movements_service.open_issue(db, item),
             "duplicates": items_service.legacy_number_duplicates(
@@ -172,6 +175,7 @@ def _form_dict(form) -> dict[str, Any]:
         "purchase_date",
         "warranty_until",
         "notes",
+        "kit_template_id",
     )
     return {name: form.get(name) for name in fields if form.get(name) is not None}
 
@@ -189,6 +193,7 @@ def _values_from_item(item: Item) -> dict[str, Any]:
         "purchase_date": item.purchase_date.isoformat() if item.purchase_date else "",
         "warranty_until": item.warranty_until.isoformat() if item.warranty_until else "",
         "notes": item.notes or "",
+        "kit_template_id": item.kit_template_id or "",
     }
 
 

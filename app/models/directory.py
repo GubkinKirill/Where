@@ -71,6 +71,10 @@ class Employee(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     full_name: Mapped[str] = mapped_column(String(150), index=True)
+    # the number printed on the pass; used to look people up and, later, to confirm handovers
+    personnel_number: Mapped[Optional[str]] = mapped_column(
+        String(16), unique=True, index=True, default=None
+    )
     position: Mapped[Optional[str]] = mapped_column(String(120), default=None)
     department_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("departments.id"), default=None

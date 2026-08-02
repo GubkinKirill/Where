@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% set section = 'kits' %}
+{% block title %}Шаблоны комплектности — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/kits">Комплекты</a></div>
+    <h1>Шаблоны комплектности</h1>
+  </div>
+  {% if user.can(UserRole.ADMIN) %}
+    <a class="btn btn--primary" href="/kits/templates/new">Добавить шаблон</a>
+  {% endif %}
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not templates %}
+      <div class="empty-state">
+        Шаблонов нет. Шаблон — это перечень того, что должно быть в комплекте:
+        две антенны, одна базовая станция, шесть кабелей.
+      </div>
+    {% else %}
+    <ul class="rows">
+      {% for template in templates %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            {% if user.can(UserRole.ADMIN) %}
+              <a href="/kits/templates/{{ template.id }}">{{ template.name }}</a>
+            {% else %}
+              {{ template.name }}
+            {% endif %}
+            {% if not template.is_active %}<span class="type-chip">не используется</span>{% endif %}
+          </div>
+          <div class="rows__sub">
+            {% for line in template.lines %}
+              {{ line.item_type.name }} × {{ line.quantity }}{% if not loop.last %}, {% endif %}
+            {% else %}
+              позиции не заданы
+            {% endfor %}
+          </div>
+          {% if template.description %}<div class="rows__sub">{{ template.description }}</div>{% endif %}
+        </div>
+        {% if user.can(UserRole.ADMIN) %}
+        <form method="post" action="/kits/templates/{{ template.id }}/delete"
+              onsubmit="return confirm('Удалить шаблон?')">
+          <button class="btn btn--sm btn--ghost" type="submit">Удалить</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

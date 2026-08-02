@@ -15,6 +15,7 @@ from app.db import SessionLocal
 from app.models.directory import Department, Employee, Room, StoragePlace
 from app.models.enums import ItemStatus, MovementReason, StoragePlaceKind, UserRole
 from app.models.item import Item, ItemType, NumberSequence
+from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.user import User
 from app.schemas.item import ItemForm
 from app.services import items as items_service
@@ -39,6 +40,10 @@ ITEM_TYPES = [
         ["назначение", "образ ОС", "MAC", "IP", "версия платы"],
         100,
     ),
+    ("KIT", "Комплект поставки", True, "📦", ["проект", "площадка"], 105),
+    ("ANT", "Антенна", False, "📡", [], 106),
+    ("BS", "Базовая станция", False, "📶", [], 107),
+    ("CBL", "Кабель", False, "〰", [], 108),
     ("KVM", "KVM-переключатель", False, "⇄", [], 110),
     ("NET", "Сетевое оборудование", False, "🌐", [], 120),
     ("PRN", "Принтер", False, "🖨", [], 130),
@@ -295,6 +300,55 @@ def _seed_items(db, users, types, places, employees, rooms) -> None:
         actor=editor,
         comment="Установлен на стойку",
     )
+
+    _seed_kit(db, create, types, shelf1, shelf2, editor)
+
+
+def _seed_kit(db, create, types, shelf1, shelf2, editor) -> None:
+    """A half-assembled delivery kit — the case the neighbouring department is stuck on."""
+    template = KitTemplate(
+        name="Комплект базовой станции",
+        description="Что должно уехать на площадку одной поставкой",
+        lines=[
+            KitTemplateLine(item_type_id=types["BS"].id, quantity=1, note="с блоком питания"),
+            KitTemplateLine(item_type_id=types["ANT"].id, quantity=2, note="секторные, 65°"),
+            KitTemplateLine(item_type_id=types["CBL"].id, quantity=6, note="джампер 1 м, N-типа"),
+        ],
+    )
+    db.add(template)
+    db.flush()
+
+    kit = create(
+        "KIT",
+        "Комплект БС — площадка №3",
+        location=shelf2,
+        status=ItemStatus.INCOMPLETE,
+    )
+    kit.kit_template_id = template.id
+    db.flush()
+
+    inside_kit = LocationRef.inside(kit.id)
+    packed = [
+        create("BS", "Базовая станция Huawei BTS3900", location=shelf1, manufacturer="Huawei"),
+        create("ANT", "Антенна секторная Kathrein 742265", location=shelf1, manufacturer="Kathrein"),
+    ]
+    packed += [
+        create("CBL", "Джампер N-N 1 м", location=shelf1, manufacturer="RFS") for _ in range(3)
+    ]
+    for part in packed:
+        movements_service.move_item(
+            db,
+            item=part,
+            to=inside_kit,
+            reason=MovementReason.INSTALL,
+            actor=editor,
+            comment="Уложено в комплект",
+        )
+
+    # spares on the shelf: enough for one antenna, not enough for the cables
+    create("ANT", "Антенна секторная Kathrein 742265", location=shelf1, manufacturer="Kathrein")
+    for _ in range(2):
+        create("CBL", "Джампер N-N 1 м", location=shelf1, manufacturer="RFS")
 
 
 if __name__ == "__main__":

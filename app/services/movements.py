@@ -157,6 +157,63 @@ def return_to_storage(
     return movement
 
 
+def install_component(
+    db: Session,
+    *,
+    item: Item,
+    container: Item,
+    actor: Optional[User] = None,
+    comment: Optional[str] = None,
+) -> Movement:
+    """Put a unit into a container — a component into a machine, a part into a kit."""
+    return move_item(
+        db,
+        item=item,
+        to=LocationRef.inside(container.id),
+        reason=MovementReason.INSTALL,
+        actor=actor,
+        comment=comment,
+    )
+
+
+def uninstall_component(
+    db: Session,
+    *,
+    item: Item,
+    to: LocationRef,
+    actor: Optional[User] = None,
+    comment: Optional[str] = None,
+) -> Movement:
+    """Take a unit out of its container and put it somewhere of its own."""
+    if item.loc_kind is not LocationKind.INSIDE:
+        raise MoveError(f"Единица {item.inv_number} ни во что не вложена.")
+    if to.kind is LocationKind.INSIDE:
+        raise MoveError("Для перестановки в другой контейнер используйте установку.")
+    return move_item(
+        db,
+        item=item,
+        to=to,
+        reason=MovementReason.UNINSTALL,
+        actor=actor,
+        comment=comment,
+    )
+
+
+def disassemble(
+    db: Session,
+    *,
+    container: Item,
+    to: LocationRef,
+    actor: Optional[User] = None,
+    comment: Optional[str] = None,
+) -> list[Movement]:
+    """Empty a container in one action, with a log record for every part."""
+    return [
+        uninstall_component(db, item=child, to=to, actor=actor, comment=comment)
+        for child in tree.contents(db, container)
+    ]
+
+
 def write_off_item(
     db: Session,
     *,

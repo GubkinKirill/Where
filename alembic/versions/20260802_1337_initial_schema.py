@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: fa704cd23759
+Revision ID: afeccf1fcc51
 Revises: 
-Create Date: 2026-07-31 16:53:18.933517
+Create Date: 2026-08-02 13:37:55.439959
 """
 
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = 'fa704cd23759'
+revision: str = 'afeccf1fcc51'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,8 +25,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=120), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('code')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_departments')),
+    sa.UniqueConstraint('code', name=op.f('uq_departments_code'))
     )
     op.create_table('item_types',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -39,13 +39,23 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('code')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_item_types')),
+    sa.UniqueConstraint('code', name=op.f('uq_item_types_code'))
+    )
+    op.create_table('kit_templates',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=120), nullable=False),
+    sa.Column('description', sa.String(length=400), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_kit_templates')),
+    sa.UniqueConstraint('name', name=op.f('uq_kit_templates_name'))
     )
     op.create_table('number_sequences',
     sa.Column('prefix', sa.String(length=8), nullable=False),
     sa.Column('last_value', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('prefix')
+    sa.PrimaryKeyConstraint('prefix', name=op.f('pk_number_sequences'))
     )
     op.create_table('rooms',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -54,8 +64,8 @@ def upgrade() -> None:
     sa.Column('description', sa.String(length=200), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('number')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_rooms')),
+    sa.UniqueConstraint('number', name=op.f('uq_rooms_number'))
     )
     op.create_table('storage_places',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -66,9 +76,9 @@ def upgrade() -> None:
     sa.Column('notes', sa.String(length=400), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['parent_id'], ['storage_places.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('code')
+    sa.ForeignKeyConstraint(['parent_id'], ['storage_places.id'], name=op.f('fk_storage_places_parent_id_storage_places')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_storage_places')),
+    sa.UniqueConstraint('code', name=op.f('uq_storage_places_code'))
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -81,25 +91,38 @@ def upgrade() -> None:
     sa.Column('last_login_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('username')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_users')),
+    sa.UniqueConstraint('username', name=op.f('uq_users_username'))
     )
     op.create_table('employees',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('full_name', sa.String(length=150), nullable=False),
+    sa.Column('personnel_number', sa.String(length=16), nullable=True),
     sa.Column('position', sa.String(length=120), nullable=True),
     sa.Column('department_id', sa.Integer(), nullable=True),
     sa.Column('default_room_id', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['default_room_id'], ['rooms.id'], ),
-    sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['default_room_id'], ['rooms.id'], name=op.f('fk_employees_default_room_id_rooms')),
+    sa.ForeignKeyConstraint(['department_id'], ['departments.id'], name=op.f('fk_employees_department_id_departments')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_employees'))
     )
     with op.batch_alter_table('employees', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_employees_full_name'), ['full_name'], unique=False)
+        batch_op.create_index(batch_op.f('ix_employees_personnel_number'), ['personnel_number'], unique=True)
 
+    op.create_table('kit_template_lines',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('template_id', sa.Integer(), nullable=False),
+    sa.Column('item_type_id', sa.Integer(), nullable=False),
+    sa.Column('quantity', sa.Integer(), nullable=False),
+    sa.Column('note', sa.String(length=200), nullable=True),
+    sa.ForeignKeyConstraint(['item_type_id'], ['item_types.id'], name=op.f('fk_kit_template_lines_item_type_id_item_types')),
+    sa.ForeignKeyConstraint(['template_id'], ['kit_templates.id'], name=op.f('fk_kit_template_lines_template_id_kit_templates'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_kit_template_lines')),
+    sa.UniqueConstraint('template_id', 'item_type_id', name=op.f('uq_kit_template_lines_template_id_item_type_id'))
+    )
     op.create_table('items',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('inv_number', sa.String(length=16), nullable=False),
@@ -115,6 +138,7 @@ def upgrade() -> None:
     sa.Column('warranty_until', sa.Date(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('auto_data', sa.JSON(), nullable=True),
+    sa.Column('kit_template_id', sa.Integer(), nullable=True),
     sa.Column('loc_kind', sa.Enum('inside', 'storage', 'person', 'room', 'external', 'written_off', name='locationkind', native_enum=False, length=24), nullable=False),
     sa.Column('loc_parent_item_id', sa.Integer(), nullable=True),
     sa.Column('loc_storage_place_id', sa.Integer(), nullable=True),
@@ -124,14 +148,15 @@ def upgrade() -> None:
     sa.Column('loc_since', sa.DateTime(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.CheckConstraint("\n(loc_kind = 'inside'\n    AND loc_parent_item_id IS NOT NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'storage'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NOT NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'person'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NOT NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'room'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NOT NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'external'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NOT NULL)\nOR (loc_kind = 'written_off'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\n", name='ck_items_location_shape'),
-    sa.CheckConstraint('loc_parent_item_id IS NULL OR loc_parent_item_id <> id', name='ck_items_not_inside_itself'),
-    sa.ForeignKeyConstraint(['loc_employee_id'], ['employees.id'], ),
-    sa.ForeignKeyConstraint(['loc_parent_item_id'], ['items.id'], ),
-    sa.ForeignKeyConstraint(['loc_room_id'], ['rooms.id'], ),
-    sa.ForeignKeyConstraint(['loc_storage_place_id'], ['storage_places.id'], ),
-    sa.ForeignKeyConstraint(['type_id'], ['item_types.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.CheckConstraint("\n(loc_kind = 'inside'\n    AND loc_parent_item_id IS NOT NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'storage'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NOT NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'person'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NOT NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'room'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NOT NULL AND loc_external_note IS NULL)\nOR (loc_kind = 'external'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NOT NULL)\nOR (loc_kind = 'written_off'\n    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL\n    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)\n", name=op.f('ck_items_location_shape')),
+    sa.CheckConstraint('loc_parent_item_id IS NULL OR loc_parent_item_id <> id', name=op.f('ck_items_not_inside_itself')),
+    sa.ForeignKeyConstraint(['kit_template_id'], ['kit_templates.id'], name=op.f('fk_items_kit_template_id_kit_templates')),
+    sa.ForeignKeyConstraint(['loc_employee_id'], ['employees.id'], name=op.f('fk_items_loc_employee_id_employees')),
+    sa.ForeignKeyConstraint(['loc_parent_item_id'], ['items.id'], name=op.f('fk_items_loc_parent_item_id_items')),
+    sa.ForeignKeyConstraint(['loc_room_id'], ['rooms.id'], name=op.f('fk_items_loc_room_id_rooms')),
+    sa.ForeignKeyConstraint(['loc_storage_place_id'], ['storage_places.id'], name=op.f('fk_items_loc_storage_place_id_storage_places')),
+    sa.ForeignKeyConstraint(['type_id'], ['item_types.id'], name=op.f('fk_items_type_id_item_types')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_items'))
     )
     with op.batch_alter_table('items', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_items_inv_number'), ['inv_number'], unique=True)
@@ -149,9 +174,9 @@ def upgrade() -> None:
     sa.Column('item_id', sa.Integer(), nullable=False),
     sa.Column('key', sa.String(length=50), nullable=False),
     sa.Column('value', sa.String(length=500), nullable=False),
-    sa.ForeignKeyConstraint(['item_id'], ['items.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('item_id', 'key', name='uq_item_attribute_key')
+    sa.ForeignKeyConstraint(['item_id'], ['items.id'], name=op.f('fk_item_attributes_item_id_items'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_item_attributes')),
+    sa.UniqueConstraint('item_id', 'key', name=op.f('uq_item_attributes_item_id_key'))
     )
     op.create_table('movements',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -177,18 +202,18 @@ def upgrade() -> None:
     sa.Column('to_room_id', sa.Integer(), nullable=True),
     sa.Column('to_external_note', sa.String(length=200), nullable=True),
     sa.Column('to_label', sa.String(length=300), nullable=False),
-    sa.ForeignKeyConstraint(['from_employee_id'], ['employees.id'], ),
-    sa.ForeignKeyConstraint(['from_parent_item_id'], ['items.id'], ),
-    sa.ForeignKeyConstraint(['from_room_id'], ['rooms.id'], ),
-    sa.ForeignKeyConstraint(['from_storage_place_id'], ['storage_places.id'], ),
-    sa.ForeignKeyConstraint(['item_id'], ['items.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['moved_by_user_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['recipient_employee_id'], ['employees.id'], ),
-    sa.ForeignKeyConstraint(['to_employee_id'], ['employees.id'], ),
-    sa.ForeignKeyConstraint(['to_parent_item_id'], ['items.id'], ),
-    sa.ForeignKeyConstraint(['to_room_id'], ['rooms.id'], ),
-    sa.ForeignKeyConstraint(['to_storage_place_id'], ['storage_places.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['from_employee_id'], ['employees.id'], name=op.f('fk_movements_from_employee_id_employees')),
+    sa.ForeignKeyConstraint(['from_parent_item_id'], ['items.id'], name=op.f('fk_movements_from_parent_item_id_items')),
+    sa.ForeignKeyConstraint(['from_room_id'], ['rooms.id'], name=op.f('fk_movements_from_room_id_rooms')),
+    sa.ForeignKeyConstraint(['from_storage_place_id'], ['storage_places.id'], name=op.f('fk_movements_from_storage_place_id_storage_places')),
+    sa.ForeignKeyConstraint(['item_id'], ['items.id'], name=op.f('fk_movements_item_id_items'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['moved_by_user_id'], ['users.id'], name=op.f('fk_movements_moved_by_user_id_users')),
+    sa.ForeignKeyConstraint(['recipient_employee_id'], ['employees.id'], name=op.f('fk_movements_recipient_employee_id_employees')),
+    sa.ForeignKeyConstraint(['to_employee_id'], ['employees.id'], name=op.f('fk_movements_to_employee_id_employees')),
+    sa.ForeignKeyConstraint(['to_parent_item_id'], ['items.id'], name=op.f('fk_movements_to_parent_item_id_items')),
+    sa.ForeignKeyConstraint(['to_room_id'], ['rooms.id'], name=op.f('fk_movements_to_room_id_rooms')),
+    sa.ForeignKeyConstraint(['to_storage_place_id'], ['storage_places.id'], name=op.f('fk_movements_to_storage_place_id_storage_places')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_movements'))
     )
     with op.batch_alter_table('movements', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_movements_item_id'), ['item_id'], unique=False)
@@ -217,7 +242,9 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_items_inv_number'))
 
     op.drop_table('items')
+    op.drop_table('kit_template_lines')
     with op.batch_alter_table('employees', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_employees_personnel_number'))
         batch_op.drop_index(batch_op.f('ix_employees_full_name'))
 
     op.drop_table('employees')
@@ -225,6 +252,7 @@ def downgrade() -> None:
     op.drop_table('storage_places')
     op.drop_table('rooms')
     op.drop_table('number_sequences')
+    op.drop_table('kit_templates')
     op.drop_table('item_types')
     op.drop_table('departments')
     # ### end Alembic commands ###

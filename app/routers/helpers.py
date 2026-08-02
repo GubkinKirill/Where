@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.directory import Department, Employee, Room, StoragePlace
 from app.models.enums import LocationKind
 from app.models.item import Item, ItemType
+from app.models.kit import KitTemplate
 from app.services.errors import MoveError
 from app.services.location import LocationRef
 
@@ -75,5 +76,8 @@ def form_choices(db: Session) -> dict[str, Any]:
                 .where(ItemType.is_container.is_(True))
                 .order_by(Item.inv_number)
             )
+        ),
+        "kit_templates": list(
+            db.scalars(select(KitTemplate).where(KitTemplate.is_active).order_by(KitTemplate.name))
         ),
     }

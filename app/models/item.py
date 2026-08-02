@@ -75,10 +75,10 @@ class NumberSequence(Base):
 class Item(Base, TimestampMixin):
     __tablename__ = "items"
     __table_args__ = (
-        CheckConstraint(LOCATION_SHAPE_CHECK, name="ck_items_location_shape"),
+        CheckConstraint(LOCATION_SHAPE_CHECK, name="location_shape"),
         CheckConstraint(
             "loc_parent_item_id IS NULL OR loc_parent_item_id <> id",
-            name="ck_items_not_inside_itself",
+            name="not_inside_itself",
         ),
     )
 
@@ -101,6 +101,10 @@ class Item(Base, TimestampMixin):
     notes: Mapped[Optional[str]] = mapped_column(Text, default=None)
     # reserved for a future hardware collector agent; nothing writes it yet
     auto_data: Mapped[Optional[dict]] = mapped_column(JSON, default=None)
+    # for container items assembled to a checklist: what this kit should contain
+    kit_template_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("kit_templates.id"), default=None
+    )
 
     loc_kind: Mapped[LocationKind] = mapped_column(enum_column(LocationKind), index=True)
     loc_parent_item_id: Mapped[Optional[int]] = mapped_column(
@@ -128,6 +132,7 @@ class Item(Base, TimestampMixin):
     storage_place: Mapped[Optional[StoragePlace]] = relationship()
     employee: Mapped[Optional[Employee]] = relationship()
     room: Mapped[Optional[Room]] = relationship()
+    kit_template: Mapped[Optional["KitTemplate"]] = relationship()  # noqa: F821
     attributes: Mapped[list["ItemAttribute"]] = relationship(
         back_populates="item", cascade="all, delete-orphan", order_by="ItemAttribute.key"
     )
@@ -148,7 +153,7 @@ class ItemAttribute(Base):
     """Free-form extra fields: Raspberry Pi image, MAC, IP, project, board revision."""
 
     __tablename__ = "item_attributes"
-    __table_args__ = (UniqueConstraint("item_id", "key", name="uq_item_attribute_key"),)
+    __table_args__ = (UniqueConstraint("item_id", "key"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"))

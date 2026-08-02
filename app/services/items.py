@@ -115,6 +115,24 @@ def search_items(db: Session, filters: ItemFilter) -> list[Item]:
     return list(db.scalars(stmt.order_by(Item.inv_number).limit(filters.limit)))
 
 
+def installable_into(db: Session, container: Item) -> list[Item]:
+    """Units that may be put into this container: not written off, not already in it,
+    and not one of its own ancestors — that would make a loop."""
+    from app.services import tree
+
+    forbidden = {container.id} | {parent.id for parent in tree.ancestors(db, container)}
+    candidates = db.scalars(
+        select(Item)
+        .where(
+            Item.status != ItemStatus.WRITTEN_OFF,
+            Item.id.not_in(forbidden),
+            (Item.loc_parent_item_id.is_(None)) | (Item.loc_parent_item_id != container.id),
+        )
+        .order_by(Item.inv_number)
+    )
+    return [item for item in candidates if not tree.is_inside(db, container, item)]
+
+
 def count_items(db: Session, *, include_written_off: bool = False) -> int:
     stmt = select(func.count(Item.id))
     if not include_written_off:
@@ -137,6 +155,7 @@ def _apply_form(item: Item, form: ItemForm) -> None:
     item.purchase_date = form.purchase_date
     item.warranty_until = form.warranty_until
     item.notes = form.notes
+    item.kit_template_id = form.kit_template_id
 
 
 def _apply_attributes(item: Item, attributes: Optional[dict[str, str]]) -> None:

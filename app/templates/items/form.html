@@ -97,6 +97,22 @@
           </div>
 
           <div class="form-row">
+            <label for="kit_template_id">Шаблон комплектности</label>
+            <select id="kit_template_id" name="kit_template_id">
+              <option value="">— не комплект —</option>
+              {% for template in kit_templates %}
+                <option value="{{ template.id }}"
+                  {{ 'selected' if values.kit_template_id and values.kit_template_id|string == template.id|string }}>
+                  {{ template.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="hint">
+              Для единиц-контейнеров: система будет сверять вложенное с перечнем и показывать, чего не хватает.
+            </div>
+          </div>
+
+          <div class="form-row">
             <label>Дополнительные атрибуты</label>
             <div class="hint" style="margin-bottom:8px">
               Назначение, образ ОС, MAC, IP, версия платы — для Raspberry Pi и подобного.

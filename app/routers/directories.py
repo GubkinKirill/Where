@@ -81,6 +81,7 @@ DIRECTORIES: dict[str, Directory] = {
         model=Employee,
         fields=(
             Field("full_name", "ФИО", required=True),
+            Field("personnel_number", "Табельный номер", hint="как на пропуске"),
             Field("position", "Должность"),
             Field("department_id", "Отдел", kind="select", options="departments"),
             Field("default_room_id", "Кабинет по умолчанию", kind="select", options="rooms"),
@@ -88,6 +89,7 @@ DIRECTORIES: dict[str, Directory] = {
         ),
         columns=(
             ("full_name", "ФИО"),
+            ("personnel_number", "Таб. №"),
             ("position", "Должность"),
             ("department", "Отдел"),
             ("default_room", "Кабинет"),

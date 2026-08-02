@@ -13,6 +13,7 @@ from app.services import items as items_service
 from app.services import movements as movements_service
 from app.services import tree
 from app.services.errors import ServiceError
+from app.services.location import LocationRef
 from app.routers.helpers import form_choices, int_or_none, location_from_form
 from app.templating import redirect, render
 
@@ -154,6 +155,157 @@ async def return_item(item_id: int, request: Request, db: DbSession, user: Edito
 
     db.commit()
     return redirect(f"/items/{item.id}", flash="Возврат записан.")
+
+
+@router.get("/items/{item_id}/install", response_class=HTMLResponse)
+def install_form(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    container = _require_item(db, item_id)
+    if container is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+    return render(
+        request,
+        "movements/install.html",
+        {
+            "user": user,
+            "item": container,
+            "candidates": items_service.installable_into(db, container),
+        },
+    )
+
+
+@router.post("/items/{item_id}/install")
+async def install(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    container = _require_item(db, item_id)
+    if container is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+
+    form = await request.form()
+    try:
+        component = _require_item(db, int_or_none(form.get("component_id")) or 0)
+        if component is None:
+            raise ServiceError("Выберите единицу, которую устанавливаете.")
+        movements_service.install_component(
+            db, item=component, container=container, actor=user, comment=form.get("comment")
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return render(
+            request,
+            "movements/install.html",
+            {
+                "user": user,
+                "item": container,
+                "candidates": items_service.installable_into(db, container),
+                "error": str(exc),
+            },
+            status_code=400,
+        )
+
+    db.commit()
+    return redirect(f"/items/{container.id}", flash="Единица установлена в состав.")
+
+
+@router.get("/items/{item_id}/uninstall", response_class=HTMLResponse)
+def uninstall_form(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    item = _require_item(db, item_id)
+    if item is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+    return render(
+        request,
+        "movements/uninstall.html",
+        {"user": user, "item": item, **form_choices(db)},
+    )
+
+
+@router.post("/items/{item_id}/uninstall")
+async def uninstall(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    item = _require_item(db, item_id)
+    if item is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+
+    form = await request.form()
+    container_id = item.loc_parent_item_id
+    try:
+        place_id = int_or_none(form.get("storage_place_id"))
+        if place_id is None:
+            raise ServiceError("Выберите место хранения, куда кладём изъятое.")
+        movements_service.uninstall_component(
+            db,
+            item=item,
+            to=LocationRef.storage(place_id),
+            actor=user,
+            comment=form.get("comment"),
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return render(
+            request,
+            "movements/uninstall.html",
+            {"user": user, "item": item, "error": str(exc), **form_choices(db)},
+            status_code=400,
+        )
+
+    db.commit()
+    return redirect(
+        f"/items/{container_id or item.id}", flash=f"Единица {item.inv_number} изъята из состава."
+    )
+
+
+@router.get("/items/{item_id}/disassemble", response_class=HTMLResponse)
+def disassemble_form(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    container = _require_item(db, item_id)
+    if container is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+    return render(
+        request,
+        "movements/disassemble.html",
+        {
+            "user": user,
+            "item": container,
+            "contents": tree.contents(db, container),
+            **form_choices(db),
+        },
+    )
+
+
+@router.post("/items/{item_id}/disassemble")
+async def disassemble(item_id: int, request: Request, db: DbSession, user: EditorUser):
+    container = _require_item(db, item_id)
+    if container is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+
+    form = await request.form()
+    try:
+        place_id = int_or_none(form.get("storage_place_id"))
+        if place_id is None:
+            raise ServiceError("Выберите место хранения, куда выкладываем содержимое.")
+        taken = movements_service.disassemble(
+            db,
+            container=container,
+            to=LocationRef.storage(place_id),
+            actor=user,
+            comment=form.get("comment"),
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return render(
+            request,
+            "movements/disassemble.html",
+            {
+                "user": user,
+                "item": container,
+                "contents": tree.contents(db, container),
+                "error": str(exc),
+                **form_choices(db),
+            },
+            status_code=400,
+        )
+
+    db.commit()
+    return redirect(
+        f"/items/{container.id}",
+        flash=f"Изъято единиц: {len(taken)}. На каждую записано перемещение.",
+    )
 
 
 @router.get("/items/{item_id}/write-off", response_class=HTMLResponse)
