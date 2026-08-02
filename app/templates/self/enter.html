@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Моя техника — Учёт техники</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="login-page">
+  <h1>Моя техника</h1>
+  <div class="sub">Что за мной закреплено</div>
+
+  {% if error %}<div class="flash flash--error">{{ error }}</div>{% endif %}
+
+  <section class="card">
+    <div class="card__body">
+      <form method="post" action="/my">
+        <div class="form-row">
+          <label for="personnel_number">Табельный номер</label>
+          <input type="text" id="personnel_number" name="personnel_number"
+                 inputmode="numeric" autocomplete="off" autofocus required
+                 placeholder="как на пропуске">
+        </div>
+        <button class="btn btn--primary" style="width:100%; justify-content:center" type="submit">
+          Показать
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <p style="color:var(--muted); font-size:13px">
+    Учётная запись не нужна. Если номера нет или список неверный — обратитесь в технический отдел.
+  </p>
+  <p style="font-size:13px"><a href="/login">Вход для сотрудников отдела</a></p>
+</div>
+</body>
+</html>

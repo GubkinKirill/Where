@@ -16,6 +16,7 @@
         <span class="badge badge--written_off">Уволен</span>
       {% endif %}
       {% if employee.position %}<span class="type-chip">{{ employee.position }}</span>{% endif %}
+      {% if employee.personnel_number %}<span class="type-chip">таб. № {{ employee.personnel_number }}</span>{% endif %}
       {% if employee.department %}<span class="type-chip">{{ employee.department }}</span>{% endif %}
       {% if employee.default_room %}<span class="type-chip">каб. {{ employee.default_room.number }}</span>{% endif %}
     </div>

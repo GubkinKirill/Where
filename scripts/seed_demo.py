@@ -163,12 +163,14 @@ def _seed_employees(db, departments, rooms) -> dict[str, Employee]:
     employees = {
         "petrov": Employee(
             full_name="Петров Иван Сергеевич",
+            personnel_number="1042",
             position="Инженер-технолог",
             department_id=departments["235"].id,
             default_room_id=rooms["312"].id,
         ),
         "sidorova": Employee(
             full_name="Сидорова Анна Викторовна",
+            personnel_number="0871",
             position="Экономист",
             department_id=departments["117"].id,
             default_room_id=rooms["208"].id,

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% block title %}Моя техника — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>{{ employee.short_name }}</h1>
+    <div class="crumbs" style="margin-top:6px">За вами закреплено единиц: {{ items | length }}</div>
+  </div>
+  <a class="btn btn--ghost" href="/my">Другой номер</a>
+</div>
+
+{% if not items %}
+  <section class="card"><div class="card__body">
+    <div class="empty-state">За вами техника не числится.</div>
+  </div></section>
+{% else %}
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ item.inv_number }}</span> {{ item.name }}
+            {{ ui.status_badge(item.status) }}
+          </div>
+          <div class="rows__sub">
+            {{ item.type.name }}
+            {%- if item.legacy_number %} · прежний номер {{ item.legacy_number }}{% endif %}
+            {%- if item.serial_number %} · с/н {{ item.serial_number }}{% endif %}
+          </div>
+          <div class="rows__sub">
+            У вас с {{ item.loc_since | d }}
+            {%- set issue = open_issues.get(item.id) %}
+            {%- if issue and issue.expected_return_date %}
+              · вернуть до {{ issue.expected_return_date | d }}{% if issue.is_overdue %}, срок прошёл{% endif %}
+            {%- endif %}
+          </div>
+          {% if contents.get(item.id) %}
+            <div class="rows__sub">
+              В составе:
+              {% for child in contents[item.id] %}
+                <span class="inv">{{ child.inv_number }}</span> {{ child.name }}{% if not loop.last %}; {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<p style="color:var(--muted); font-size:13px">
+  Список неверный — что-то отдали или получили, а здесь не отразилось? Сообщите в технический отдел,
+  запись поправят и это останется в журнале.
+</p>
+{% endif %}
+{% endblock %}
