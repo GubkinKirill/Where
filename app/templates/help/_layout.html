@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set section = 'help' %}
+{% block title %}{{ page_title }} — Справка{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/help">Справка</a></div>
+    <h1>{{ page_title }}</h1>
+  </div>
+  {% if not user %}
+    <a class="btn" href="/login">Вход</a>
+  {% endif %}
+</div>
+
+<div class="doc-layout">
+  <nav class="doc-nav">
+    <ul>
+      {% for slug, title in pages %}
+        <li>
+          <a href="{{ '/help' if slug == 'index' else '/help/' ~ slug }}"
+             class="{{ 'is-active' if slug == page }}">{{ title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div>
+    <section class="card">
+      <div class="card__body doc">
+        {% block doc %}{% endblock %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

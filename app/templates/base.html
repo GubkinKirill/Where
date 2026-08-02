@@ -20,6 +20,7 @@
       <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
       <a href="/reports/unconfirmed" class="{{ 'is-active' if section == 'reports' }}">Не подтверждено</a>
       <a href="/directories" class="{{ 'is-active' if section == 'directories' }}">Справочники</a>
+      <a href="/help" class="{{ 'is-active' if section == 'help' }}">Справка</a>
     </nav>
     <span class="topbar__user desktop-only">{{ user.display_name }} · {{ user.role | role_label }}</span>
     <form method="post" action="/logout">

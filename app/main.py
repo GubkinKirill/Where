@@ -9,6 +9,7 @@ from app.routers import (
     auth,
     directories,
     employees,
+    help,
     items,
     kits,
     movements,
@@ -29,6 +30,7 @@ app.include_router(employees.router)
 app.include_router(kits.router)
 app.include_router(reports.router)
 app.include_router(self_service.router)
+app.include_router(help.router)
 app.include_router(directories.router)
 
 
