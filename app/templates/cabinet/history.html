@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% set section = 'my-history' %}
+{% block title %}История — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>История</h1>
+    <div class="crumbs" style="margin-top:6px">Что вам выдавали и что забирали обратно</div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not movements %}
+      <div class="empty-state">Записей пока нет.</div>
+    {% else %}
+    <ul class="timeline">
+      {% for movement in movements %}
+      <li>
+        <div class="timeline__date">{{ movement.moved_at | dt }}</div>
+        <div class="timeline__what">
+          {{ movement.reason | reason_label }}:
+          <span class="inv">{{ movement.item.inv_number }}</span> {{ movement.item.name }}
+        </div>
+        <div class="timeline__where">
+          {{ movement.from_label or 'постановка на учёт' }} → {{ movement.to_label }}
+        </div>
+        <div class="timeline__meta">
+          {%- if movement.comment %}«{{ movement.comment }}»{% endif %}
+          {%- if movement.acknowledged_at %} · получение подтверждено {{ movement.acknowledged_at | d }}{% endif %}
+          {%- if movement.returned_at %} · возвращено {{ movement.returned_at | d }}{% endif %}
+          {%- if movement.recipient_employee_id == employee.id and movement.needs_acknowledgement %}
+            · <a href="/cabinet">не подтверждено</a>
+          {%- endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

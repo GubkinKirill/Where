@@ -1,0 +1,211 @@
+"""The employee's own cabinet: signed in as themselves, they see what is assigned
+to them, confirm handovers, look up colleagues and file requests.
+
+Read only by construction — nothing here writes a location. The two things an
+employee may change are their own acknowledgement and their own request.
+"""
+
+from typing import Optional
+
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+
+from app.auth.deps import CabinetUser, DbSession
+from app.models.base import now
+from app.models.directory import Employee
+from app.models.enums import RequestKind
+from app.models.movement import Movement
+from app.models.request import EquipmentRequest
+from app.routers.helpers import int_or_none
+from app.schemas.item import ItemFilter
+from app.services import employees as employees_service
+from app.services import items as items_service
+from app.services import movements as movements_service
+from app.services import requests as requests_service
+from app.services import tree
+from app.services.errors import ServiceError
+from app.templating import redirect, render
+
+router = APIRouter()
+
+
+@router.get("/cabinet", response_class=HTMLResponse)
+def cabinet(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    employee = user.employee
+    held = employees_service.items_of(db, employee)
+    return render(
+        request,
+        "cabinet/index.html",
+        {
+            "user": user,
+            "employee": employee,
+            "items": held,
+            "contents": {item.id: tree.contents(db, item) for item in held},
+            "open_issues": {item.id: movements_service.open_issue(db, item) for item in held},
+            "pending": movements_service.pending_acknowledgements(db, employee),
+            "requests": requests_service.open_of(db, employee),
+        },
+    )
+
+
+@router.post("/cabinet/confirm")
+async def confirm(request: Request, db: DbSession, user: CabinetUser):
+    """«Получил» — the same acknowledgement as on /my, only signed in."""
+    form = await request.form()
+    movement = db.get(Movement, int_or_none(form.get("movement_id")) or 0)
+    if movement is None:
+        return redirect("/cabinet", flash="Запись о выдаче не найдена.", kind="warn")
+    try:
+        movements_service.acknowledge(db, movement=movement, employee=user.employee)
+    except ServiceError as exc:
+        db.rollback()
+        return redirect("/cabinet", flash=str(exc), kind="warn")
+    db.commit()
+    return redirect("/cabinet", flash=f"Получение {movement.item.inv_number} подтверждено.")
+
+
+@router.get("/cabinet/history", response_class=HTMLResponse)
+def history(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    """Everything ever handed to this person or taken back from them."""
+    return render(
+        request,
+        "cabinet/history.html",
+        {
+            "user": user,
+            "employee": user.employee,
+            "movements": employees_service.history_of(db, user.employee),
+        },
+    )
+
+
+@router.get("/cabinet/act", response_class=HTMLResponse)
+def own_act(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    """The printable list of one's own equipment — the paper you sign."""
+    return render(
+        request,
+        "reports/act.html",
+        {
+            "user": user,
+            "title": "Акт закрепления оборудования",
+            "employee": user.employee,
+            "items": employees_service.items_of(db, user.employee),
+            "issued_at": now(),
+            "back_url": "/cabinet",
+        },
+    )
+
+
+@router.get("/cabinet/colleagues", response_class=HTMLResponse)
+def colleagues(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    """Who else holds what. Names, departments and counts — no personal details,
+    the same thing anybody could see by walking round the offices."""
+    query = (request.query_params.get("q") or "").strip()
+    people = employees_service.with_counts(db, query=query or None)
+    return render(
+        request,
+        "cabinet/colleagues.html",
+        {"user": user, "employee": user.employee, "people": people, "q": query},
+    )
+
+
+@router.get("/cabinet/colleagues/{employee_id}", response_class=HTMLResponse)
+def colleague(
+    employee_id: int, request: Request, db: DbSession, user: CabinetUser
+) -> HTMLResponse:
+    person = db.get(Employee, employee_id)
+    if person is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+    held = employees_service.items_of(db, person)
+    return render(
+        request,
+        "cabinet/colleague.html",
+        {
+            "user": user,
+            "employee": user.employee,
+            "person": person,
+            "items": held,
+            "contents": {item.id: tree.contents(db, item) for item in held},
+        },
+    )
+
+
+@router.get("/cabinet/search", response_class=HTMLResponse)
+def search(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    """«Чей это монитор» — look a unit up by the number on its sticker."""
+    query = (request.query_params.get("q") or "").strip()
+    found = (
+        items_service.search_items(db, ItemFilter(q=query, limit=50)) if query else []
+    )
+    return render(
+        request,
+        "cabinet/search.html",
+        {"user": user, "employee": user.employee, "q": query, "items": found},
+    )
+
+
+@router.get("/cabinet/requests", response_class=HTMLResponse)
+def request_list(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
+    return render(
+        request,
+        "cabinet/requests.html",
+        {
+            "user": user,
+            "employee": user.employee,
+            "requests": requests_service.of_employee(db, user.employee),
+            "items": employees_service.items_of(db, user.employee),
+        },
+    )
+
+
+@router.post("/cabinet/requests")
+async def create_request(request: Request, db: DbSession, user: CabinetUser):
+    form = await request.form()
+    kind = _kind_or_none(form.get("kind"))
+    if kind is None:
+        return redirect("/cabinet/requests", flash="Выберите вид заявки.", kind="warn")
+
+    item = None
+    item_id = int_or_none(form.get("item_id"))
+    if item_id is not None:
+        item = items_service.get_item(db, item_id)
+        # only your own equipment: a request must not point at somebody else's unit
+        if item is None or item.loc_employee_id != user.employee.id:
+            return redirect(
+                "/cabinet/requests",
+                flash="Эта единица за вами не числится.",
+                kind="warn",
+            )
+
+    try:
+        requests_service.create(
+            db, employee=user.employee, kind=kind, text=form.get("text") or "", item=item
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return redirect("/cabinet/requests", flash=str(exc), kind="warn")
+    db.commit()
+    return redirect("/cabinet/requests", flash="Заявка отправлена в технический отдел.")
+
+
+@router.post("/cabinet/requests/{request_id}/withdraw")
+def withdraw_request(request_id: int, db: DbSession, user: CabinetUser):
+    record = db.get(EquipmentRequest, request_id)
+    if record is None:
+        return redirect("/cabinet/requests", flash="Заявка не найдена.", kind="warn")
+    try:
+        requests_service.withdraw(db, request=record, employee=user.employee)
+    except ServiceError as exc:
+        db.rollback()
+        return redirect("/cabinet/requests", flash=str(exc), kind="warn")
+    db.commit()
+    return redirect("/cabinet/requests", flash="Заявка отозвана.")
+
+
+# --- internals ---------------------------------------------------------------
+
+
+def _kind_or_none(raw) -> Optional[RequestKind]:
+    try:
+        return RequestKind(raw)
+    except (ValueError, TypeError):
+        return None

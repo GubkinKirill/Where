@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'cabinet' %}
+{% block title %}Моя техника — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>{{ employee.short_name }}</h1>
+    <div class="crumbs" style="margin-top:6px">
+      {% if employee.position %}{{ employee.position }} · {% endif %}
+      {%- if employee.department %}{{ employee.department.name }} · {% endif %}
+      за вами закреплено единиц: {{ items | length }}
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn btn--ghost" href="/cabinet/act">Акт закрепления</a>
+    <a class="btn btn--ghost" href="/cabinet/requests">Заявки</a>
+  </div>
+</div>
+
+{% if pending %}
+<section class="card">
+  <div class="card__head">
+    <h2>Ждут вашего подтверждения — {{ pending | length }}</h2>
+  </div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for movement in pending %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ movement.item.inv_number }}</span> {{ movement.item.name }}
+          </div>
+          <div class="rows__sub">
+            Выдано {{ movement.moved_at | dt }}
+            {%- if movement.expected_return_date %} · вернуть до {{ movement.expected_return_date | d }}{% endif %}
+            {%- if movement.comment %} · «{{ movement.comment }}»{% endif %}
+          </div>
+        </div>
+        <form method="post" action="/cabinet/confirm">
+          <input type="hidden" name="movement_id" value="{{ movement.id }}">
+          <button class="btn btn--sm btn--primary" type="submit">Получил</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% if requests %}
+<section class="card">
+  <div class="card__head">
+    <h2>Мои заявки в работе — {{ requests | length }}</h2>
+    <a href="/cabinet/requests">все заявки</a>
+  </div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for record in requests %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            {{ record.kind | request_kind_label }}
+            <span class="badge badge--{{ record.status.value }}">{{ record.status | request_status_label }}</span>
+          </div>
+          <div class="rows__sub">{{ record.created_at | d }} · {{ record.text }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="card__head"><h2>За мной закреплено</h2></div>
+  <div class="card__body card__body--flush">
+    {% if not items %}
+      <div class="empty-state">За вами техника не числится.</div>
+    {% else %}
+    <ul class="rows">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ item.inv_number }}</span> {{ item.name }}
+            {{ ui.status_badge(item.status) }}
+          </div>
+          <div class="rows__sub">
+            {{ item.type.name }}
+            {%- if item.legacy_number %} · прежний номер {{ item.legacy_number }}{% endif %}
+            {%- if item.serial_number %} · с/н {{ item.serial_number }}{% endif %}
+            {%- if item.room %} · кабинет {{ item.room.number }}{% endif %}
+          </div>
+          <div class="rows__sub">
+            У вас с {{ item.loc_since | d }} ({{ item.loc_since | since }})
+            {%- set issue = open_issues.get(item.id) %}
+            {%- if issue and issue.expected_return_date %}
+              · вернуть до {{ issue.expected_return_date | d }}{% if issue.is_overdue %}, срок прошёл{% endif %}
+            {%- endif %}
+            {%- if issue and issue.acknowledged_at %} · получение подтверждено {{ issue.acknowledged_at | d }}{% endif %}
+          </div>
+          {% if contents.get(item.id) %}
+            <div class="rows__sub">
+              В составе:
+              {% for child in contents[item.id] %}
+                <span class="inv">{{ child.inv_number }}</span> {{ child.name }}{% if not loop.last %}; {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+<p style="color:var(--muted); font-size:13px">
+  Список неверный — что-то отдали или получили, а здесь не отразилось?
+  <a href="/cabinet/requests">Напишите заявку</a>, запись поправят и это останется в журнале.
+</p>
+{% endblock %}

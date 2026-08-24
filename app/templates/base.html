@@ -12,17 +12,30 @@
 {% if user %}
 <header class="topbar">
   <div class="topbar__inner">
-    <a class="brand" href="/items">Учёт техники</a>
+    <a class="brand" href="/">Учёт техники</a>
     <nav class="nav">
-      <a href="/items" class="{{ 'is-active' if section == 'items' }}">Единицы</a>
-      <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
-      <a href="/directories/employees" class="{{ 'is-active' if section == 'employees' }}">Сотрудники</a>
-      <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
-      <a href="/reports/unconfirmed" class="{{ 'is-active' if section == 'reports' }}">Не подтверждено</a>
-      <a href="/directories" class="{{ 'is-active' if section == 'directories' }}">Справочники</a>
+      {% if user.is_staff %}
+        <a href="/dashboard" class="{{ 'is-active' if section == 'dashboard' }}">Сводка</a>
+        <a href="/items" class="{{ 'is-active' if section == 'items' }}">Единицы</a>
+        <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
+        <a href="/directories/employees" class="{{ 'is-active' if section == 'employees' }}">Сотрудники</a>
+        <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
+        <a href="/requests" class="{{ 'is-active' if section == 'requests' }}">Заявки</a>
+        <a href="/reports/unconfirmed" class="{{ 'is-active' if section == 'reports' }}">Не подтверждено</a>
+        <a href="/directories" class="{{ 'is-active' if section == 'directories' }}">Справочники</a>
+        {% if user.role == UserRole.ADMIN %}
+          <a href="/admin/users" class="{{ 'is-active' if section == 'users' }}">Учётки</a>
+        {% endif %}
+      {% else %}
+        <a href="/cabinet" class="{{ 'is-active' if section == 'cabinet' }}">Моя техника</a>
+        <a href="/cabinet/colleagues" class="{{ 'is-active' if section == 'colleagues' }}">Коллеги</a>
+        <a href="/cabinet/search" class="{{ 'is-active' if section == 'search' }}">Найти вещь</a>
+        <a href="/cabinet/requests" class="{{ 'is-active' if section == 'my-requests' }}">Заявки</a>
+        <a href="/cabinet/history" class="{{ 'is-active' if section == 'my-history' }}">История</a>
+      {% endif %}
       <a href="/help" class="{{ 'is-active' if section == 'help' }}">Справка</a>
     </nav>
-    <span class="topbar__user desktop-only">{{ user.display_name }} · {{ user.role | role_label }}</span>
+    <a class="topbar__user desktop-only" href="/profile">{{ user.display_name }} · {{ user.role | role_label }}</a>
     <form method="post" action="/logout">
       <button class="btn btn--sm btn--ghost" type="submit">Выйти</button>
     </form>

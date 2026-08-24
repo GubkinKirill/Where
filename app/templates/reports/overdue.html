@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set section = 'reports' %}
+{% block title %}Просроченный возврат — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Просроченный возврат</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Выдано с датой возврата, дата прошла, вещь всё ещё у человека
+    </div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not movements %}
+      <div class="empty-state">Просроченных возвратов нет.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Вернуть до</th>
+            <th>Единица</th>
+            <th>У кого</th>
+            <th>Выдано</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for movement in movements %}
+          <tr>
+            <td>{{ movement.expected_return_date | d }}</td>
+            <td>
+              <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+              <div class="nested-mark">{{ movement.item.name }}</div>
+            </td>
+            <td>
+              {% if movement.recipient %}
+                <a href="/employees/{{ movement.recipient.id }}">{{ movement.recipient.short_name }}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ movement.moved_at | d }}</td>
+            <td style="text-align:right; white-space:nowrap">
+              {% if user.can(UserRole.EDITOR) %}
+                <a class="btn btn--sm btn--ghost" href="/items/{{ movement.item_id }}/return">Принять</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'search' %}
+{% block title %}Найти вещь — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Найти вещь</h1>
+    <div class="crumbs" style="margin-top:6px">
+      По инвентарному номеру с наклейки, прежнему номеру, серийному номеру или названию —
+      покажет, где вещь числится.
+    </div>
+  </div>
+</div>
+
+<form class="search" method="get" action="/cabinet/search">
+  <input type="search" name="q" value="{{ q }}" placeholder="PC-0014, 235-70, серийный номер, «монитор»"
+         autocomplete="off" autofocus>
+  <button class="btn" type="submit">Найти</button>
+</form>
+
+{% if q %}
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not items %}
+      <div class="empty-state">Ничего не нашли. Проверьте номер или спросите в техническом отделе.</div>
+    {% else %}
+    <ul class="rows">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ item.inv_number }}</span> {{ item.name }}
+            {{ ui.status_badge(item.status) }}
+          </div>
+          <div class="rows__sub">
+            {{ item.type.name }}
+            {%- if item.legacy_number %} · прежний номер {{ item.legacy_number }}{% endif %}
+            {%- if item.serial_number %} · с/н {{ item.serial_number }}{% endif %}
+          </div>
+          <div class="rows__sub">
+            {{ item.loc_kind | location_kind_icon }}
+            {%- if item.loc_kind == LocationKind.PERSON %}
+              у <a href="/cabinet/colleagues/{{ item.loc_employee_id }}">{{ item.employee.short_name if item.employee else '—' }}</a>
+              {%- if item.room %}, кабинет {{ item.room.number }}{% endif %}
+            {%- elif item.loc_kind == LocationKind.STORAGE %}
+              на складе: {{ item.storage_place.full_path if item.storage_place else '—' }}
+            {%- elif item.loc_kind == LocationKind.INSIDE %}
+              в составе <span class="inv">{{ item.parent_item.inv_number if item.parent_item else '—' }}</span>
+            {%- elif item.loc_kind == LocationKind.ROOM %}
+              в кабинете {{ item.room.number if item.room else '—' }}
+            {%- elif item.loc_kind == LocationKind.EXTERNAL %}
+              передано: {{ item.loc_external_note }}
+            {%- else %}
+              списано
+            {%- endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

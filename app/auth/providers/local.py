@@ -16,6 +16,17 @@ def hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
+def verify_password(user: User, password: str) -> bool:
+    """Check a password without signing anybody in — used to confirm a password change."""
+    if not user.password_hash:
+        return False
+    try:
+        _hasher.verify(user.password_hash, password)
+    except (VerifyMismatchError, VerificationError, InvalidHashError):
+        return False
+    return True
+
+
 class LocalProvider:
     """Username and password stored in our own table, hashed with argon2."""
 

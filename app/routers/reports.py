@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from app.auth.deps import DbSession, ViewerUser
 from app.models.base import now
 from app.models.movement import Movement
+from app.services import dashboard as dashboard_service
 from app.services import employees as employees_service
 from app.services import movements as movements_service
 from app.templating import render
@@ -21,6 +22,20 @@ def unconfirmed(request: Request, db: DbSession, user: ViewerUser) -> HTMLRespon
         {
             "user": user,
             "movements": pending,
+            "today": now(),
+        },
+    )
+
+
+@router.get("/reports/overdue", response_class=HTMLResponse)
+def overdue(request: Request, db: DbSession, user: ViewerUser) -> HTMLResponse:
+    """Issued with a return date that has passed."""
+    return render(
+        request,
+        "reports/overdue.html",
+        {
+            "user": user,
+            "movements": dashboard_service.overdue_issues(db),
             "today": now(),
         },
     )

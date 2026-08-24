@@ -35,7 +35,11 @@ def login(
             status_code=401,
         )
     db.commit()
-    response = RedirectResponse(next or "/", status_code=303)
+    # an employee account has nothing to do on the page it was sent from
+    target = next or "/"
+    if not user.is_staff and not target.startswith(("/cabinet", "/profile", "/help")):
+        target = "/cabinet"
+    response = RedirectResponse(target, status_code=303)
     start_session(response, user)
     return response
 

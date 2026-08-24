@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Кабинет не привязан — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head"><h1>Кабинет пока пуст</h1></div>
+<section class="card">
+  <div class="card__body">
+    <p>
+      Учётная запись «{{ user.username if user else '—' }}» не привязана к карточке сотрудника,
+      поэтому показывать нечего: кабинет строится вокруг человека, за которым числится техника.
+    </p>
+    <p style="color:var(--muted)">
+      Попросите администратора связать учётную запись с вашей карточкой в разделе «Учётки».
+      {% if user and user.is_staff %}
+        Пока же вам доступны рабочие разделы: <a href="/dashboard">сводка</a>.
+      {% endif %}
+    </p>
+  </div>
+</section>
+{% endblock %}

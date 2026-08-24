@@ -1,6 +1,8 @@
 from typing import Optional
 
-from sqlalchemy import select
+from dataclasses import dataclass
+
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.directory import Employee
@@ -26,6 +28,53 @@ def items_of(db: Session, employee: Employee) -> list[Item]:
                 Item.loc_employee_id == employee.id,
             )
             .order_by(Item.inv_number)
+        )
+    )
+
+
+@dataclass(frozen=True)
+class EmployeeLine:
+    """A person plus how much is on them — the colleagues list and nothing more."""
+
+    employee: Employee
+    count: int
+
+
+def with_counts(db: Session, *, query: Optional[str] = None) -> list[EmployeeLine]:
+    """Active people and how many units each holds, in one pass over the items."""
+    counts = dict(
+        db.execute(
+            select(Item.loc_employee_id, func.count(Item.id))
+            .where(Item.loc_kind == LocationKind.PERSON)
+            .group_by(Item.loc_employee_id)
+        ).all()
+    )
+    stmt = select(Employee).where(Employee.is_active)
+    if query:
+        pattern = f"%{query}%"
+        stmt = stmt.where(
+            or_(Employee.full_name.ilike(pattern), Employee.position.ilike(pattern))
+        )
+    return [
+        EmployeeLine(employee=employee, count=counts.get(employee.id, 0))
+        for employee in db.scalars(stmt.order_by(Employee.full_name))
+    ]
+
+
+def history_of(db: Session, employee: Employee) -> list[Movement]:
+    """Everything handed to this person or taken back from them, newest first."""
+    return list(
+        db.scalars(
+            select(Movement)
+            .where(
+                or_(
+                    Movement.to_employee_id == employee.id,
+                    Movement.from_employee_id == employee.id,
+                    Movement.recipient_employee_id == employee.id,
+                )
+            )
+            .order_by(Movement.moved_at.desc(), Movement.id.desc())
+            .limit(200)
         )
     )
 

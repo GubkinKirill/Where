@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set section = 'requests' %}
+{% block title %}Заявки — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Заявки сотрудников</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Открытых: {{ open_count }}. Заявка ничего не перемещает — выдачу оформляют
+      в карточке единицы, здесь только ответ и статус.
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn {{ 'btn--primary' if show != 'all' }}" href="/requests?show=open">Открытые</a>
+    <a class="btn {{ 'btn--primary' if show == 'all' }}" href="/requests?show=all">Все</a>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not requests %}
+      <div class="empty-state">Заявок нет.</div>
+    {% else %}
+    <ul class="rows">
+      {% for record in requests %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            {{ record.kind | request_kind_label }}
+            <span class="badge badge--{{ record.status.value }}">{{ record.status | request_status_label }}</span>
+          </div>
+          <div class="rows__sub">
+            {{ record.created_at | dt }} ·
+            <a href="/employees/{{ record.employee_id }}">{{ record.employee.short_name }}</a>
+            {%- if record.employee.department %} · {{ record.employee.department.name }}{% endif %}
+            {%- if record.item %} ·
+              <a href="/items/{{ record.item_id }}" class="inv">{{ record.item.inv_number }}</a>
+              {{ record.item.name }}
+            {%- endif %}
+          </div>
+          <div class="rows__sub">{{ record.text }}</div>
+          {% if record.resolution %}
+            <div class="rows__sub">
+              Ответ: {{ record.resolution }}
+              {%- if record.closed_by %} ({{ record.closed_by.display_name }}){% endif %}
+              {%- if record.closed_at %}, {{ record.closed_at | d }}{% endif %}
+            </div>
+          {% endif %}
+
+          {% if user.can(UserRole.EDITOR) %}
+          <form method="post" action="/requests/{{ record.id }}/status" class="filters" style="margin-top:8px">
+            <input type="hidden" name="show" value="{{ show }}">
+            <input type="text" name="resolution" value="{{ record.resolution or '' }}"
+                   placeholder="ответ сотруднику" style="flex:1; min-width:200px">
+            <select name="status">
+              {% for status in RequestStatus %}
+                <option value="{{ status.value }}" {{ 'selected' if status == record.status }}>
+                  {{ status | request_status_label }}
+                </option>
+              {% endfor %}
+            </select>
+            <button class="btn btn--sm" type="submit">Сохранить</button>
+          </form>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

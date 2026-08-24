@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set section = 'users' %}
+{% block title %}{{ target.username }} — учётная запись{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/admin/users">Учётные записи</a></div>
+    <h1>{{ target.username }}</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Создана {{ target.created_at | d }} · последний вход {{ target.last_login_at | dt }}
+    </div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__head"><h2>Доступ</h2></div>
+  <div class="card__body">
+    <form method="post" action="/admin/users/{{ target.id }}">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="role">Роль</label>
+          <select id="role" name="role" required>
+            {% for role in roles %}
+              <option value="{{ role.value }}" {{ 'selected' if role == target.role }}>
+                {{ role | role_label }} — {{ role | role_hint }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="full_name">Имя в интерфейсе</label>
+          <input type="text" id="full_name" name="full_name" value="{{ target.full_name }}">
+        </div>
+        <div class="form-row">
+          <label for="employee_id">Сотрудник</label>
+          <select id="employee_id" name="employee_id">
+            <option value="">— не привязан —</option>
+            {% for employee in employees %}
+              <option value="{{ employee.id }}" {{ 'selected' if employee.id == target.employee_id }}>
+                {{ employee.full_name }}{% if employee.personnel_number %} · таб. {{ employee.personnel_number }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Состояние</label>
+          <label style="display:flex; gap:8px; align-items:center">
+            <input type="checkbox" name="is_active" {{ 'checked' if target.is_active }}>
+            учётная запись работает
+          </label>
+        </div>
+      </div>
+      <button class="btn btn--primary" type="submit">Сохранить</button>
+    </form>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__head"><h2>Сбросить пароль</h2></div>
+  <div class="card__body">
+    <form method="post" action="/admin/users/{{ target.id }}/password">
+      <div class="form-row">
+        <label for="password">Новый пароль</label>
+        <input type="text" id="password" name="password" required minlength="8"
+               autocomplete="off" placeholder="не короче 8 символов">
+      </div>
+      <button class="btn" type="submit">Установить пароль</button>
+      <span style="color:var(--muted); font-size:13px; margin-left:8px">
+        Старый пароль не потребуется. Передайте новый лично.
+      </span>
+    </form>
+  </div>
+</section>
+{% endblock %}

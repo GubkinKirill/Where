@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'colleagues' %}
+{% block title %}{{ person.short_name }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/cabinet/colleagues">Коллеги</a></div>
+    <h1>{{ person.short_name }}</h1>
+    <div class="crumbs" style="margin-top:6px">
+      {{ person.position or 'должность не указана' }}
+      {%- if person.department %} · {{ person.department.name }}{% endif %}
+      {%- if person.default_room %} · кабинет {{ person.default_room.number }}{% endif %}
+      {%- if not person.is_active %} · не работает{% endif %}
+    </div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__head"><h2>Закреплено единиц: {{ items | length }}</h2></div>
+  <div class="card__body card__body--flush">
+    {% if not items %}
+      <div class="empty-state">Техника не числится.</div>
+    {% else %}
+    <ul class="rows">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <span class="inv">{{ item.inv_number }}</span> {{ item.name }}
+            {{ ui.status_badge(item.status) }}
+          </div>
+          <div class="rows__sub">
+            {{ item.type.name }}
+            {%- if item.room %} · кабинет {{ item.room.number }}{% endif %}
+            · с {{ item.loc_since | d }}
+          </div>
+          {% if contents.get(item.id) %}
+            <div class="rows__sub">
+              В составе:
+              {% for child in contents[item.id] %}
+                <span class="inv">{{ child.inv_number }}</span> {{ child.name }}{% if not loop.last %}; {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

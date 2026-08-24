@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page__head no-print">
   <div>
-    <div class="crumbs"><a href="/employees/{{ employee.id }}">{{ employee.short_name }}</a></div>
+    <div class="crumbs"><a href="{{ back_url or '/employees/' ~ employee.id }}">{{ employee.short_name }}</a></div>
     <h1>{{ title }}</h1>
   </div>
   <div class="actions">

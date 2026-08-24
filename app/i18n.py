@@ -5,6 +5,8 @@ from app.models.enums import (
     ItemStatus,
     LocationKind,
     MovementReason,
+    RequestKind,
+    RequestStatus,
     StoragePlaceKind,
     UserRole,
 )
@@ -62,6 +64,28 @@ ROLE_LABELS = {
     UserRole.ADMIN: "администратор",
     UserRole.EDITOR: "редактор",
     UserRole.VIEWER: "просмотр",
+    UserRole.EMPLOYEE: "сотрудник",
+}
+
+ROLE_HINTS = {
+    UserRole.ADMIN: "всё, включая справочники и учётные записи",
+    UserRole.EDITOR: "ведёт учёт: единицы, перемещения, заявки",
+    UserRole.VIEWER: "смотрит списки и карточки, ничего не меняет",
+    UserRole.EMPLOYEE: "только личный кабинет: своя техника, коллеги, заявки",
+}
+
+REQUEST_KIND_LABELS = {
+    RequestKind.NEED: "Нужна техника",
+    RequestKind.BROKEN: "Что-то сломалось",
+    RequestKind.PICKUP: "Прошу забрать",
+    RequestKind.OTHER: "Другое",
+}
+
+REQUEST_STATUS_LABELS = {
+    RequestStatus.NEW: "Новая",
+    RequestStatus.IN_PROGRESS: "В работе",
+    RequestStatus.DONE: "Выполнена",
+    RequestStatus.REJECTED: "Отклонена",
 }
 
 STORAGE_KIND_LABELS = {
@@ -90,6 +114,18 @@ def reason_label(value: MovementReason | str) -> str:
 
 def role_label(value: UserRole | str) -> str:
     return ROLE_LABELS.get(UserRole(value), str(value))
+
+
+def role_hint(value: UserRole | str) -> str:
+    return ROLE_HINTS.get(UserRole(value), "")
+
+
+def request_kind_label(value: RequestKind | str) -> str:
+    return REQUEST_KIND_LABELS.get(RequestKind(value), str(value))
+
+
+def request_status_label(value: RequestStatus | str) -> str:
+    return REQUEST_STATUS_LABELS.get(RequestStatus(value), str(value))
 
 
 def storage_kind_label(value: StoragePlaceKind | str) -> str:

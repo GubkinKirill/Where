@@ -183,6 +183,12 @@ h2 { font-size: 15px; }
 .badge--repair      { background: #fdeeed; color: #b3261e; border-color: #f5cdca; }
 .badge--written_off { background: #eef0f3; color: #667085; border-color: #dcdfe4; }
 
+/* статусы заявок */
+.badge--new         { background: #e8f0fe; color: #1f57c3; border-color: #c9dbfa; }
+.badge--in_progress { background: #fdf3e2; color: #96590d; border-color: #f2ddb8; }
+.badge--done        { background: #e7f4ec; color: #1a7f45; border-color: #c3e4d1; }
+.badge--rejected    { background: #eef0f3; color: #667085; border-color: #dcdfe4; }
+
 .inv {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-weight: 600;
@@ -437,7 +443,37 @@ table.list tbody tr:hover { background: #fafbfc; }
   .qr__code { background: #fff; }
   .note { background: #33291a; border-color: #574526; color: #e6c98f; }
   .actionbar { background: rgba(27, 32, 40, .97); }
+  .tile--warn { background: #2a1f1e; border-color: #5a3330; }
+  .tile--warn .tile__value { color: #f0a29c; }
 }
+
+/* ---------- сводка: плитки ---------- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tile {
+  display: block;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: inherit;
+}
+.tile:hover { border-color: var(--border-strong); text-decoration: none; }
+.tile--warn { border-color: #f0c8c4; background: #fdf6f5; }
+
+.tile__value { font-size: 26px; font-weight: 600; line-height: 1.1; }
+.tile--warn .tile__value { color: #b3261e; }
+.tile__label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.tile__hint { font-size: 12px; color: var(--muted); margin-top: 2px; opacity: .8; }
+
+a.topbar__user:hover { color: #fff; text-decoration: none; }
 
 /* ---------- forms ---------- */
 

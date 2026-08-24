@@ -8,7 +8,14 @@ from fastapi.templating import Jinja2Templates
 
 from app import i18n
 from app.config import APP_DIR, settings
-from app.models.enums import ItemStatus, LocationKind, MovementReason, UserRole
+from app.models.enums import (
+    ItemStatus,
+    LocationKind,
+    MovementReason,
+    RequestKind,
+    RequestStatus,
+    UserRole,
+)
 
 FLASH_COOKIE = "flash"
 
@@ -45,6 +52,9 @@ templates.env.filters.update(
     location_kind_icon=i18n.location_kind_icon,
     reason_label=i18n.reason_label,
     role_label=i18n.role_label,
+    role_hint=i18n.role_hint,
+    request_kind_label=i18n.request_kind_label,
+    request_status_label=i18n.request_status_label,
     storage_kind_label=i18n.storage_kind_label,
     d=_format_date,
     dt=_format_datetime,
@@ -55,11 +65,16 @@ templates.env.globals.update(
     ItemStatus=ItemStatus,
     LocationKind=LocationKind,
     MovementReason=MovementReason,
+    RequestKind=RequestKind,
+    RequestStatus=RequestStatus,
     UserRole=UserRole,
     STATUS_LABELS=i18n.STATUS_LABELS,
     LOCATION_KIND_LABELS=i18n.LOCATION_KIND_LABELS,
     MOVEMENT_REASON_LABELS=i18n.MOVEMENT_REASON_LABELS,
     STORAGE_KIND_LABELS=i18n.STORAGE_KIND_LABELS,
+    REQUEST_KIND_LABELS=i18n.REQUEST_KIND_LABELS,
+    REQUEST_STATUS_LABELS=i18n.REQUEST_STATUS_LABELS,
+    ROLE_LABELS=i18n.ROLE_LABELS,
     base_url=settings.base_url,
 )
 

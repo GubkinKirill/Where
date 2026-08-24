@@ -19,6 +19,15 @@
       {% if employee.personnel_number %}<span class="type-chip">таб. № {{ employee.personnel_number }}</span>{% endif %}
       {% if employee.department %}<span class="type-chip">{{ employee.department }}</span>{% endif %}
       {% if employee.default_room %}<span class="type-chip">каб. {{ employee.default_room.number }}</span>{% endif %}
+      {% if account %}
+        <span class="type-chip">
+          учётка
+          {%- if user.can(UserRole.ADMIN) %} <a href="/admin/users/{{ account.id }}">{{ account.username }}</a>
+          {%- else %} {{ account.username }}{% endif %}
+        </span>
+      {% elif user.can(UserRole.ADMIN) %}
+        <span class="type-chip"><a href="/admin/users">завести учётную запись</a></span>
+      {% endif %}
     </div>
   </div>
 
@@ -110,6 +119,30 @@
           </div>
           <button class="btn btn--primary" type="submit">Передать</button>
         </form>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if requests %}
+    <section class="card">
+      <div class="card__head">
+        <h2>Заявки сотрудника</h2>
+        <a href="/requests?show=all">все заявки</a>
+      </div>
+      <div class="card__body card__body--flush">
+        <ul class="rows">
+          {% for record in requests %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title">
+                {{ record.kind | request_kind_label }}
+                <span class="badge badge--{{ record.status.value }}">{{ record.status | request_status_label }}</span>
+              </div>
+              <div class="rows__sub">{{ record.created_at | d }} · {{ record.text }}</div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
       </div>
     </section>
     {% endif %}

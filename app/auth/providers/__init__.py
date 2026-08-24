@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.auth.providers.base import CredentialsProvider
-from app.auth.providers.local import LocalProvider, hash_password
+from app.auth.providers.local import LocalProvider, hash_password, verify_password
 from app.models.base import now
 from app.models.user import User
 
@@ -24,4 +24,10 @@ def authenticate(db: Session, username: str, password: str) -> Optional[User]:
     return None
 
 
-__all__ = ["PROVIDERS", "CredentialsProvider", "authenticate", "hash_password"]
+__all__ = [
+    "PROVIDERS",
+    "CredentialsProvider",
+    "authenticate",
+    "hash_password",
+    "verify_password",
+]

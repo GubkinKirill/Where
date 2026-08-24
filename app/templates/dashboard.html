@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% set section = 'dashboard' %}
+{% block title %}Сводка — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Сводка</h1>
+    <div class="crumbs" style="margin-top:6px">Где что находится и что требует внимания</div>
+  </div>
+  <div class="actions">
+    <a class="btn btn--primary" href="/items/new">Добавить единицу</a>
+  </div>
+</div>
+
+<div class="tiles">
+  {% for tile in tiles %}
+  <a class="tile {{ 'tile--warn' if tile.tone == 'warn' }}" href="{{ tile.url }}">
+    <div class="tile__value">{{ tile.value }}</div>
+    <div class="tile__label">{{ tile.label }}</div>
+    {% if tile.hint %}<div class="tile__hint">{{ tile.hint }}</div>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<h2 style="margin:18px 0 8px">Требует внимания</h2>
+<div class="tiles">
+  {% for tile in attention %}
+  <a class="tile {{ 'tile--warn' if tile.tone == 'warn' }}" href="{{ tile.url }}">
+    <div class="tile__value">{{ tile.value }}</div>
+    <div class="tile__label">{{ tile.label }}</div>
+    {% if tile.hint %}<div class="tile__hint">{{ tile.hint }}</div>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="cols">
+  <section class="card">
+    <div class="card__head">
+      <h2>Просроченный возврат</h2>
+      <a href="/reports/overdue">весь список</a>
+    </div>
+    <div class="card__body card__body--flush">
+      {% if not overdue %}
+        <div class="empty-state">Просроченных нет.</div>
+      {% else %}
+      <ul class="rows">
+        {% for movement in overdue[:6] %}
+        <li>
+          <div class="rows__main">
+            <div class="rows__title">
+              <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+              {{ movement.item.name }}
+            </div>
+            <div class="rows__sub">
+              {{ movement.recipient.short_name if movement.recipient else '—' }} ·
+              вернуть до {{ movement.expected_return_date | d }}
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <h2>Последние перемещения</h2>
+      <a href="/movements">журнал</a>
+    </div>
+    <div class="card__body card__body--flush">
+      {% if not recent %}
+        <div class="empty-state">Журнал пуст.</div>
+      {% else %}
+      <ul class="rows">
+        {% for movement in recent[:8] %}
+        <li>
+          <div class="rows__main">
+            <div class="rows__title">
+              <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+              {{ movement.reason | reason_label | lower }}
+            </div>
+            <div class="rows__sub">{{ movement.moved_at | dt }} · {{ movement.to_label }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

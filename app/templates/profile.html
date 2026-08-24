@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>{{ user.display_name }}</h1>
+    <div class="crumbs" style="margin-top:6px">Учётная запись «{{ user.username }}»</div>
+  </div>
+</div>
+
+<div class="cols">
+  <section class="card">
+    <div class="card__head"><h2>Кто вы в системе</h2></div>
+    <div class="card__body">
+      <dl class="kv">
+        <dt>Роль</dt><dd>{{ user.role | role_label }} — {{ user.role | role_hint }}</dd>
+        <dt>Сотрудник</dt>
+        <dd>
+          {% if user.employee %}
+            {{ user.employee.full_name }}
+            {%- if user.employee.personnel_number %} · таб. {{ user.employee.personnel_number }}{% endif %}
+            <div style="margin-top:4px"><a href="/cabinet">Личный кабинет</a></div>
+          {% else %}
+            не привязан — кабинет пуст, обратитесь к администратору
+          {% endif %}
+        </dd>
+        <dt>Последний вход</dt><dd>{{ user.last_login_at | dt }}</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head"><h2>Сменить пароль</h2></div>
+    <div class="card__body">
+      <form method="post" action="/profile/password">
+        <div class="form-row">
+          <label for="current_password">Текущий пароль</label>
+          <input type="password" id="current_password" name="current_password"
+                 autocomplete="current-password" required>
+        </div>
+        <div class="form-row">
+          <label for="new_password">Новый пароль</label>
+          <input type="password" id="new_password" name="new_password"
+                 autocomplete="new-password" minlength="8" required>
+        </div>
+        <button class="btn btn--primary" type="submit">Сменить</button>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

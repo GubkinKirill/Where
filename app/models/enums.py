@@ -35,10 +35,17 @@ class UserRole(StrEnum):
     ADMIN = "admin"
     EDITOR = "editor"
     VIEWER = "viewer"
+    # an ordinary employee: sees their own cabinet, never the accounting screens
+    EMPLOYEE = "employee"
 
     def at_least(self, other: "UserRole") -> bool:
-        order = [UserRole.VIEWER, UserRole.EDITOR, UserRole.ADMIN]
+        order = [UserRole.EMPLOYEE, UserRole.VIEWER, UserRole.EDITOR, UserRole.ADMIN]
         return order.index(self) >= order.index(other)
+
+    @property
+    def is_staff(self) -> bool:
+        """Works in the department: gets the accounting screens, not just a cabinet."""
+        return self is not UserRole.EMPLOYEE
 
 
 class StoragePlaceKind(StrEnum):
@@ -46,3 +53,21 @@ class StoragePlaceKind(StrEnum):
     SHELF = "shelf"
     CELL = "cell"
     ROOM = "room"
+
+
+class RequestKind(StrEnum):
+    NEED = "need"
+    BROKEN = "broken"
+    PICKUP = "pickup"
+    OTHER = "other"
+
+
+class RequestStatus(StrEnum):
+    NEW = "new"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    REJECTED = "rejected"
+
+    @property
+    def is_open(self) -> bool:
+        return self in (RequestStatus.NEW, RequestStatus.IN_PROGRESS)

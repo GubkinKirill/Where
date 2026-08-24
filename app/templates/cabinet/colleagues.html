@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set section = 'colleagues' %}
+{% block title %}Коллеги — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Коллеги</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Кто чем пользуется. Пригодится, когда нужно одолжить или найти хозяина вещи.
+    </div>
+  </div>
+</div>
+
+<form class="search" method="get" action="/cabinet/colleagues">
+  <input type="search" name="q" value="{{ q }}" placeholder="ФИО или должность" autocomplete="off">
+  <button class="btn" type="submit">Найти</button>
+</form>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not people %}
+      <div class="empty-state">Никого не нашли.</div>
+    {% else %}
+    <ul class="rows">
+      {% for line in people %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <a href="/cabinet/colleagues/{{ line.employee.id }}">{{ line.employee.short_name }}</a>
+            {% if line.employee.id == employee.id %}<span class="type-chip">это вы</span>{% endif %}
+          </div>
+          <div class="rows__sub">
+            {{ line.employee.position or 'должность не указана' }}
+            {%- if line.employee.department %} · {{ line.employee.department.name }}{% endif %}
+            {%- if line.employee.default_room %} · кабинет {{ line.employee.default_room.number }}{% endif %}
+          </div>
+        </div>
+        <div class="count">{{ line.count }} ед.</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

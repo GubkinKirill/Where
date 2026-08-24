@@ -2,8 +2,16 @@
 {% block title %}Нет доступа — Учёт техники{% endblock %}
 {% block content %}
   <h1>Нет доступа</h1>
+  {% if user and not user.is_staff %}
+  <p class="empty-state">
+    Эта страница — для технического отдела. Ваш кабинет показывает то, что закреплено
+    за вами, и то, что есть у коллег.<br>
+    <a href="/cabinet">Вернуться в личный кабинет</a>
+  </p>
+  {% else %}
   <p class="empty-state">
     Для этого действия нужна роль «{{ required | role_label }}».<br>
     <a href="/items">Вернуться к списку единиц</a>
   </p>
+  {% endif %}
 {% endblock %}

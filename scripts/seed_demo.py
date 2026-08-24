@@ -13,9 +13,17 @@ from sqlalchemy import func, select
 from app.auth.providers import hash_password
 from app.db import SessionLocal
 from app.models.directory import Department, Employee, Room, StoragePlace
-from app.models.enums import ItemStatus, MovementReason, StoragePlaceKind, UserRole
+from app.models.enums import (
+    ItemStatus,
+    MovementReason,
+    RequestKind,
+    RequestStatus,
+    StoragePlaceKind,
+    UserRole,
+)
 from app.models.item import Item, ItemType, NumberSequence
 from app.models.kit import KitTemplate, KitTemplateLine
+from app.models.request import EquipmentRequest
 from app.models.user import User
 from app.schemas.item import ItemForm
 from app.services import items as items_service
@@ -68,15 +76,21 @@ def main() -> int:
         places = _seed_storage(db)
         employees = _seed_employees(db, departments, rooms)
         db.flush()
+        _seed_employee_accounts(db, employees)
 
         for prefix, value in NUMBER_HEAD_START.items():
             db.add(NumberSequence(prefix=prefix, last_value=value))
         db.flush()
 
         _seed_items(db, users, types, places, employees, rooms)
+        _seed_requests(db, employees)
         db.commit()
 
-    print("Демо-данные загружены. Вход: admin / admin12345")
+    print(
+        "Демо-данные загружены.\n"
+        "  Отдел:     admin / admin12345, kgubkin / editor12345, viewer / viewer12345\n"
+        "  Сотрудник: petrov / employee12345 (личный кабинет)"
+    )
     return 0
 
 
@@ -103,6 +117,39 @@ def _seed_users(db) -> dict[str, User]:
     }
     db.add_all(users.values())
     return users
+
+
+def _seed_employee_accounts(db, employees) -> None:
+    """A cabinet login for one of the demo employees: role «employee», tied to the card."""
+    db.add(
+        User(
+            username="petrov",
+            full_name="",
+            role=UserRole.EMPLOYEE,
+            password_hash=hash_password("employee12345"),
+            employee_id=employees["petrov"].id,
+        )
+    )
+    db.flush()
+
+
+def _seed_requests(db, employees) -> None:
+    db.add_all(
+        [
+            EquipmentRequest(
+                employee_id=employees["petrov"].id,
+                kind=RequestKind.NEED,
+                text="Нужен второй монитор на рабочее место, работаю с двумя схемами сразу.",
+            ),
+            EquipmentRequest(
+                employee_id=employees["sidorova"].id,
+                kind=RequestKind.BROKEN,
+                status=RequestStatus.IN_PROGRESS,
+                text="Принтер зажёвывает бумагу.",
+            ),
+        ]
+    )
+    db.flush()
 
 
 def _seed_types(db) -> dict[str, ItemType]:

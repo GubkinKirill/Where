@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set section = 'users' %}
+{% block title %}Учётные записи — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Учётные записи</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Кто может войти и что ему видно. Учётка сотрудника открывает только личный
+      кабинет, поэтому её обязательно привязывают к карточке человека.
+    </div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Логин</th>
+            <th>Имя</th>
+            <th>Роль</th>
+            <th>Сотрудник</th>
+            <th>Последний вход</th>
+            <th>Состояние</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for account in users %}
+          <tr>
+            <td><a href="/admin/users/{{ account.id }}">{{ account.username }}</a></td>
+            <td>{{ account.full_name or '—' }}</td>
+            <td>{{ account.role | role_label }}</td>
+            <td>
+              {% if account.employee %}
+                <a href="/employees/{{ account.employee_id }}">{{ account.employee.short_name }}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ account.last_login_at | dt }}</td>
+            <td>{{ 'работает' if account.is_active else 'отключена' }}</td>
+            <td style="text-align:right">
+              <a class="btn btn--sm btn--ghost" href="/admin/users/{{ account.id }}">Изменить</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__head"><h2>Новая учётная запись</h2></div>
+  <div class="card__body">
+    <form method="post" action="/admin/users/new">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="username">Логин</label>
+          <input type="text" id="username" name="username" required autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="password">Пароль</label>
+          <input type="text" id="password" name="password" required autocomplete="off"
+                 minlength="8" placeholder="не короче 8 символов">
+        </div>
+        <div class="form-row">
+          <label for="role">Роль</label>
+          <select id="role" name="role" required>
+            {% for role in roles %}
+              <option value="{{ role.value }}" {{ 'selected' if role == UserRole.EMPLOYEE }}>
+                {{ role | role_label }} — {{ role | role_hint }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="full_name">Имя в интерфейсе</label>
+          <input type="text" id="full_name" name="full_name" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="employee_id">Сотрудник</label>
+          <select id="employee_id" name="employee_id">
+            <option value="">— не привязан —</option>
+            {% for employee in employees %}
+              <option value="{{ employee.id }}">
+                {{ employee.full_name }}{% if employee.personnel_number %} · таб. {{ employee.personnel_number }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button class="btn btn--primary" type="submit">Создать</button>
+      <span style="color:var(--muted); font-size:13px; margin-left:8px">
+        Пароль виден в поле — сообщите его человеку лично, он сменит его в профиле.
+      </span>
+    </form>
+  </div>
+</section>
+{% endblock %}
