@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from app.auth.deps import DbSession, ViewerUser
 from app.models.base import now
 from app.models.movement import Movement
+from app.services import consumables as consumables_service
 from app.services import dashboard as dashboard_service
 from app.services import employees as employees_service
 from app.services import movements as movements_service
@@ -38,6 +39,16 @@ def overdue(request: Request, db: DbSession, user: ViewerUser) -> HTMLResponse:
             "movements": dashboard_service.overdue_issues(db),
             "today": now(),
         },
+    )
+
+
+@router.get("/reports/low-stock", response_class=HTMLResponse)
+def low_stock(request: Request, db: DbSession, user: ViewerUser) -> HTMLResponse:
+    """Consumables at or below their threshold, and everything already at zero."""
+    return render(
+        request,
+        "reports/low_stock.html",
+        {"user": user, "stocks": consumables_service.low_stock(db)},
     )
 
 

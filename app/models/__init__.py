@@ -1,6 +1,8 @@
 from app.models.base import Base
+from app.models.consumable import ConsumableMovement, ConsumableStock
 from app.models.directory import Department, Employee, Room, StoragePlace
 from app.models.enums import (
+    ConsumableReason,
     ItemStatus,
     LocationKind,
     MovementReason,
@@ -17,6 +19,9 @@ from app.models.user import User
 
 __all__ = [
     "Base",
+    "ConsumableMovement",
+    "ConsumableReason",
+    "ConsumableStock",
     "Department",
     "EquipmentRequest",
     "Employee",

@@ -71,3 +71,9 @@ class RequestStatus(StrEnum):
     @property
     def is_open(self) -> bool:
         return self in (RequestStatus.NEW, RequestStatus.IN_PROGRESS)
+
+
+class ConsumableReason(StrEnum):
+    RECEIPT = "receipt"
+    ISSUE = "issue"
+    ADJUST = "adjust"

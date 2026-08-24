@@ -2,7 +2,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import app.services  # noqa: F401  registers the placement guard
+import app.db  # noqa: F401  registers the sqlite pragmas and unicode lower()
+import app.services  # noqa: F401  registers the write guards
 from app.models import Base
 from app.models.directory import Employee, Room, StoragePlace
 from app.models.enums import StoragePlaceKind, UserRole

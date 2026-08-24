@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set section = 'storage' %}
+{% block title %}{{ 'Новая позиция' if not stock else stock.name }} — Расходники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs">
+      <a href="/storage">Склад</a> · <a href="/consumables">Расходники</a>
+      {% if stock %} · <a href="/consumables/{{ stock.id }}">{{ stock.name }}</a>{% endif %}
+    </div>
+    <h1>{{ 'Новая позиция' if not stock else 'Изменение позиции' }}</h1>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body">
+    <form method="post" action="{{ '/consumables/new' if not stock else '/consumables/' ~ stock.id ~ '/edit' }}">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="name">Название <span class="req">*</span></label>
+          <input type="text" id="name" name="name" value="{{ values.get('name', '') }}" required
+                 placeholder="Патч-корд UTP 2 м">
+        </div>
+        <div class="form-row">
+          <label for="category">Категория</label>
+          <input type="text" id="category" name="category" value="{{ values.get('category', '') }}"
+                 list="categories" placeholder="Кабели">
+          <datalist id="categories">
+            {% for category in categories or [] %}<option value="{{ category }}">{% endfor %}
+          </datalist>
+        </div>
+        <div class="form-row">
+          <label for="unit">Единица измерения</label>
+          <input type="text" id="unit" name="unit" value="{{ values.get('unit', 'шт.') }}" placeholder="шт.">
+        </div>
+        <div class="form-row">
+          <label for="min_quantity">Порог «заканчивается»</label>
+          <input type="number" id="min_quantity" name="min_quantity" min="0"
+                 value="{{ values.get('min_quantity', 0) }}">
+          <div class="hint">0 — не предупреждать.</div>
+        </div>
+        <div class="form-row">
+          <label for="storage_place_id">Где лежит</label>
+          <select id="storage_place_id" name="storage_place_id">
+            <option value="">— не указано —</option>
+            {% for place in storage_places %}
+              <option value="{{ place.id }}"
+                {{ 'selected' if values.get('storage_place_id')|string == place.id|string }}>
+                {{ place.full_path }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if not stock %}
+        <div class="form-row">
+          <label for="quantity">Остаток сейчас</label>
+          <input type="number" id="quantity" name="quantity" min="0" value="0">
+          <div class="hint">Ляжет в журнал приходом «Начальный остаток».</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-row">
+        <label for="notes">Заметки</label>
+        <textarea id="notes" name="notes" rows="2">{{ values.get('notes', '') }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <label style="display:flex; gap:8px; align-items:center">
+          <input type="checkbox" name="is_active" {{ 'checked' if values.get('is_active', True) }}>
+          в обороте
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Сохранить</button>
+        <a class="btn btn--ghost" href="{{ '/consumables' if not stock else '/consumables/' ~ stock.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

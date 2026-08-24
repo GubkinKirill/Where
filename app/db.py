@@ -15,6 +15,13 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
+def _lower(value):
+    """SQLite's own lower() folds ASCII only, so «Петров» would not match «петров».
+    Every ILIKE in the app compiles to lower() LIKE lower(), so replacing the
+    function makes search case-insensitive in Russian too."""
+    return value.lower() if isinstance(value, str) else value
+
+
 @event.listens_for(Engine, "connect")
 def _sqlite_pragmas(dbapi_connection, connection_record) -> None:
     """SQLite ignores foreign keys unless asked; WAL keeps readers unblocked."""
@@ -22,6 +29,7 @@ def _sqlite_pragmas(dbapi_connection, connection_record) -> None:
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.close()
+    dbapi_connection.create_function("lower", 1, _lower, deterministic=True)
 
 
 def get_db() -> Iterator[Session]:

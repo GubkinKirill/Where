@@ -18,6 +18,7 @@ from app.models.movement import Movement
 from app.models.request import EquipmentRequest
 from app.routers.helpers import int_or_none
 from app.schemas.item import ItemFilter
+from app.services import consumables as consumables_service
 from app.services import employees as employees_service
 from app.services import items as items_service
 from app.services import movements as movements_service
@@ -44,6 +45,7 @@ def cabinet(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
             "open_issues": {item.id: movements_service.open_issue(db, item) for item in held},
             "pending": movements_service.pending_acknowledgements(db, employee),
             "requests": requests_service.open_of(db, employee),
+            "consumables": consumables_service.issued_to(db, employee, limit=10),
         },
     )
 

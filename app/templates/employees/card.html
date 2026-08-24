@@ -123,6 +123,27 @@
     </section>
     {% endif %}
 
+    {% if consumables %}
+    <section class="card">
+      <div class="card__head"><h2>Выданные расходники</h2></div>
+      <div class="card__body card__body--flush">
+        <ul class="rows">
+          {% for record in consumables %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title"><a href="/consumables/{{ record.stock_id }}">{{ record.stock.name }}</a></div>
+              <div class="rows__sub">
+                {{ record.happened_at | d }} · {{ -record.delta }} {{ record.stock.unit }}
+                {%- if record.comment %} · «{{ record.comment }}»{% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
     {% if requests %}
     <section class="card">
       <div class="card__head">

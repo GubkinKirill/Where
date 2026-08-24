@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from app import i18n
 from app.config import APP_DIR, settings
 from app.models.enums import (
+    ConsumableReason,
     ItemStatus,
     LocationKind,
     MovementReason,
@@ -56,12 +57,14 @@ templates.env.filters.update(
     request_kind_label=i18n.request_kind_label,
     request_status_label=i18n.request_status_label,
     storage_kind_label=i18n.storage_kind_label,
+    consumable_reason_label=i18n.consumable_reason_label,
     d=_format_date,
     dt=_format_datetime,
     since=_since,
 )
 
 templates.env.globals.update(
+    ConsumableReason=ConsumableReason,
     ItemStatus=ItemStatus,
     LocationKind=LocationKind,
     MovementReason=MovementReason,
@@ -72,6 +75,7 @@ templates.env.globals.update(
     LOCATION_KIND_LABELS=i18n.LOCATION_KIND_LABELS,
     MOVEMENT_REASON_LABELS=i18n.MOVEMENT_REASON_LABELS,
     STORAGE_KIND_LABELS=i18n.STORAGE_KIND_LABELS,
+    CONSUMABLE_REASON_LABELS=i18n.CONSUMABLE_REASON_LABELS,
     REQUEST_KIND_LABELS=i18n.REQUEST_KIND_LABELS,
     REQUEST_STATUS_LABELS=i18n.REQUEST_STATUS_LABELS,
     ROLE_LABELS=i18n.ROLE_LABELS,

@@ -109,3 +109,13 @@ def test_viewer_cannot_open_the_issue_form(client, db, types, shelf):
 
     response = client.get(f"/items/{item.id}/issue")
     assert response.status_code == 403
+
+
+def test_search_ignores_case_in_russian(client, db, editor, types, shelf):
+    """SQLite folds ASCII only — app.db replaces lower() so «монитор» finds «Монитор»."""
+    item = make_item(db, types["MON"], name="Монитор Dell", at=LocationRef.storage(shelf.id))
+    db.commit()
+    sign_in(client, "editor")
+
+    found = client.get("/items", params={"q": "монитор"}).text
+    assert item.inv_number in found

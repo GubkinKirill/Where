@@ -117,6 +117,34 @@
   </div>
 </section>
 
+{% if consumables %}
+<section class="card">
+  <div class="card__head">
+    <h2>Выдано расходников</h2>
+  </div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for record in consumables %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">{{ record.stock.name }}</div>
+          <div class="rows__sub">
+            {{ record.happened_at | d }} · {{ -record.delta }} {{ record.stock.unit }}
+            {%- if record.comment %} · «{{ record.comment }}»{% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="card__body" style="padding-top:0">
+    <p class="hint" style="margin:0">
+      Расходники не закрепляются и не возвращаются — это просто след того, что вам их выдали.
+    </p>
+  </div>
+</section>
+{% endif %}
+
 <p style="color:var(--muted); font-size:13px">
   Список неверный — что-то отдали или получили, а здесь не отразилось?
   <a href="/cabinet/requests">Напишите заявку</a>, запись поправят и это останется в журнале.

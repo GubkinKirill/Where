@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'storage' %}
+{% block title %}{{ place.name }} — Склад{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/storage">Склад</a></div>
+    <h1>{{ place.full_path }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+      <span class="type-chip">{{ place.kind | storage_kind_label }}</span>
+      <span class="type-chip">код {{ place.code }}</span>
+    </div>
+    {% if place.notes %}<p style="color:var(--muted); margin:8px 0 0">{{ place.notes }}</p>{% endif %}
+  </div>
+  {% if user.can(UserRole.ADMIN) %}
+  <div class="actions">
+    <a class="btn btn--ghost" href="/directories/storage/{{ place.id }}">Изменить место</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if children %}
+<section class="card">
+  <div class="card__head"><h2>Внутри</h2></div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for child in children %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title"><a href="/storage/{{ child.id }}">{{ child.name }}</a></div>
+          <div class="rows__sub">{{ child.kind | storage_kind_label }} · код {{ child.code }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="card__head">
+    <h2>Единицы здесь — {{ items | length }}</h2>
+    <a href="/items?storage_place_id={{ place.id }}">в общем списке</a>
+  </div>
+  <div class="card__body card__body--flush">
+    {% if not items %}
+      <div class="empty-state">Единиц на этом месте нет.</div>
+    {% else %}
+    <ul class="rows">
+      {% for item in items %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a> {{ item.name }}
+          </div>
+          <div class="rows__sub">{{ item.type.name }} · здесь с {{ item.loc_since | d }}</div>
+        </div>
+        {{ ui.status_badge(item.status) }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__head">
+    <h2>Расходники здесь — {{ stocks | length }}</h2>
+    <a href="/consumables?storage_place_id={{ place.id }}">в списке расходников</a>
+  </div>
+  <div class="card__body card__body--flush">
+    {% if not stocks %}
+      <div class="empty-state">Расходников на этом месте нет.</div>
+    {% else %}
+    <ul class="rows">
+      {% for stock in stocks %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title"><a href="/consumables/{{ stock.id }}">{{ stock.name }}</a></div>
+          <div class="rows__sub">{{ stock.category or 'без категории' }}</div>
+        </div>
+        <div class="count">
+          {{ stock.quantity }} {{ stock.unit }}
+          {% if stock.is_out %}<span class="badge badge--repair">нет</span>
+          {% elif stock.is_low %}<span class="badge badge--incomplete">мало</span>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

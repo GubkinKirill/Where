@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.enums import ItemStatus, LocationKind, MovementReason
 from app.models.item import Item
 from app.models.movement import Movement
+from app.services import consumables as consumables_service
 from app.services import requests as requests_service
 
 
@@ -38,6 +39,7 @@ def summary(db: Session) -> dict:
     overdue = _overdue(db)
     unconfirmed = _unconfirmed_count(db)
     open_requests = requests_service.open_count(db)
+    low_stock = consumables_service.low_stock(db)
 
     tiles = [
         Tile("Всего на учёте", total - by_status.get(ItemStatus.WRITTEN_OFF, 0), "/items",
@@ -62,10 +64,13 @@ def summary(db: Session) -> dict:
              "срок возврата прошёл", tone="warn" if overdue else ""),
         Tile("Открытых заявок", open_requests, "/requests", "от сотрудников",
              tone="warn" if open_requests else ""),
+        Tile("Заканчивается на складе", len(low_stock), "/reports/low-stock",
+             "расходники ниже порога", tone="warn" if low_stock else ""),
     ]
 
     return {
         "tiles": tiles,
+        "low_stock": low_stock,
         "attention": attention,
         "overdue": overdue,
         "recent": recent_movements(db),

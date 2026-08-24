@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% set section = 'storage' %}
+{% set can_edit = user.can(UserRole.EDITOR) %}
+{% block title %}{{ stock.name }} — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/storage">Склад</a> · <a href="/consumables">Расходники</a></div>
+    <h1>{{ stock.name }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      {% if stock.is_out %}
+        <span class="badge badge--repair">Нет в наличии</span>
+      {% elif stock.is_low %}
+        <span class="badge badge--incomplete">Заканчивается</span>
+      {% else %}
+        <span class="badge badge--in_use">В наличии</span>
+      {% endif %}
+      {% if stock.category %}<span class="type-chip">{{ stock.category }}</span>{% endif %}
+      {% if stock.storage_place %}
+        <span class="type-chip"><a href="/storage/{{ stock.storage_place_id }}">{{ stock.storage_place.full_path }}</a></span>
+      {% endif %}
+      {% if not stock.is_active %}<span class="type-chip">выведена из оборота</span>{% endif %}
+    </div>
+  </div>
+  {% if can_edit %}
+  <div class="actions">
+    <a class="btn btn--ghost" href="/consumables/{{ stock.id }}/edit">Изменить</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="cols">
+  <div>
+    <section class="card">
+      <div class="card__head"><h2>Остаток</h2></div>
+      <div class="card__body">
+        <div class="tile__value">{{ stock.quantity }} {{ stock.unit }}</div>
+        <div class="tile__label">
+          {% if stock.min_quantity %}порог предупреждения — {{ stock.min_quantity }} {{ stock.unit }}
+          {% else %}порог не задан, предупреждать не будем{% endif %}
+        </div>
+        {% if stock.notes %}<p style="margin:10px 0 0">{{ stock.notes }}</p>{% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h2>Журнал</h2></div>
+      <div class="card__body card__body--flush">
+        {% if not history %}
+          <div class="empty-state">Движений не было.</div>
+        {% else %}
+        <ul class="timeline">
+          {% for record in history %}
+          <li class="{{ 'is-current' if loop.first }}">
+            <div class="timeline__date">{{ record.happened_at | dt }}</div>
+            <div class="timeline__what">
+              {{ record.reason | consumable_reason_label }}:
+              {{ '+' if record.delta > 0 }}{{ record.delta }} {{ stock.unit }}
+              → стало {{ record.quantity_after }}
+            </div>
+            <div class="timeline__meta">
+              {%- if record.employee %}
+                кому: <a href="/employees/{{ record.employee_id }}">{{ record.employee.short_name }}</a> ·
+              {% endif %}
+              {%- if record.moved_by %}внёс {{ record.moved_by.display_name }}{% else %}автор не указан{% endif %}
+              {%- if record.comment %} · «{{ record.comment }}»{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div>
+    {% if can_edit %}
+    <section class="card">
+      <div class="card__head"><h2>Приход</h2></div>
+      <div class="card__body">
+        <form method="post" action="/consumables/{{ stock.id }}/receive">
+          <div class="form-row">
+            <label for="receive_quantity">Сколько поступило <span class="req">*</span></label>
+            <input type="number" id="receive_quantity" name="quantity" min="1" required>
+          </div>
+          <div class="form-row">
+            <label for="receive_comment">Откуда</label>
+            <input type="text" id="receive_comment" name="comment" placeholder="накладная, закупка, возврат">
+          </div>
+          <button class="btn btn--primary" type="submit">Оприходовать</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h2>Расход</h2></div>
+      <div class="card__body">
+        <form method="post" action="/consumables/{{ stock.id }}/issue">
+          <div class="form-row">
+            <label for="issue_quantity">Сколько выдаём <span class="req">*</span></label>
+            <input type="number" id="issue_quantity" name="quantity" min="1" max="{{ stock.quantity }}" required>
+          </div>
+          <div class="form-row">
+            <label for="issue_employee">Кому</label>
+            <select id="issue_employee" name="employee_id">
+              <option value="">— не сотруднику —</option>
+              {% for employee in employees %}
+                <option value="{{ employee.id }}">{{ employee.short_name }}{% if employee.position %} · {{ employee.position }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="issue_comment">Зачем</label>
+            <input type="text" id="issue_comment" name="comment" placeholder="на сборку PC-0014, взамен сломанной">
+            <div class="hint">Если получатель не сотрудник — напишите, куда ушло. Пустой минус в журнале не примем.</div>
+          </div>
+          <button class="btn" type="submit">Списать</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h2>Корректировка после пересчёта</h2></div>
+      <div class="card__body">
+        <form method="post" action="/consumables/{{ stock.id }}/adjust">
+          <div class="form-row">
+            <label for="adjust_quantity">Сколько на полке на самом деле <span class="req">*</span></label>
+            <input type="number" id="adjust_quantity" name="quantity" min="0" value="{{ stock.quantity }}" required>
+          </div>
+          <div class="form-row">
+            <label for="adjust_comment">Комментарий</label>
+            <input type="text" id="adjust_comment" name="comment" placeholder="пересчёт от {{ 'сегодня' }}">
+          </div>
+          <button class="btn" type="submit">Записать пересчёт</button>
+          <div class="hint">Разница ляжет в журнал отдельной строкой — видно, сколько не сошлось.</div>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if user.can(UserRole.ADMIN) and not history %}
+    <section class="card">
+      <div class="card__body">
+        <form method="post" action="/consumables/{{ stock.id }}/delete"
+              onsubmit="return confirm('Удалить позицию?')">
+          <button class="btn btn--danger" type="submit">Удалить позицию</button>
+          <div class="hint">Пока по ней не было движений.</div>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

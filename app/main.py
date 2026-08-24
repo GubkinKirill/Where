@@ -8,6 +8,7 @@ from app.config import APP_DIR, settings
 from app.routers import (
     auth,
     cabinet,
+    consumables,
     dashboard,
     directories,
     employees,
@@ -18,6 +19,7 @@ from app.routers import (
     reports,
     requests as requests_router,
     self_service,
+    storage,
     users,
 )
 from app.templating import render
@@ -33,6 +35,8 @@ app.include_router(items.router)
 app.include_router(movements.router)
 app.include_router(employees.router)
 app.include_router(kits.router)
+app.include_router(consumables.router)
+app.include_router(storage.router)
 app.include_router(reports.router)
 app.include_router(requests_router.router)
 app.include_router(cabinet.router)

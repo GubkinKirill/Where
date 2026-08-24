@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set section = 'reports' %}
+{% block title %}Заканчивается на складе — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Заканчивается на складе</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Расходники, у которых остаток упал до порога или до нуля
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn btn--ghost" href="/consumables">Все расходники</a>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not stocks %}
+      <div class="empty-state">Всего хватает.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Позиция</th>
+            <th>Категория</th>
+            <th style="text-align:right">Остаток</th>
+            <th style="text-align:right">Порог</th>
+            <th>Где лежит</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stock in stocks %}
+          <tr>
+            <td><a href="/consumables/{{ stock.id }}">{{ stock.name }}</a></td>
+            <td>{{ stock.category or '—' }}</td>
+            <td style="text-align:right; white-space:nowrap">
+              {{ stock.quantity }} {{ stock.unit }}
+              {% if stock.is_out %}<span class="badge badge--repair">нет</span>
+              {% else %}<span class="badge badge--incomplete">мало</span>{% endif %}
+            </td>
+            <td style="text-align:right">{{ stock.min_quantity or '—' }}</td>
+            <td>
+              {% if stock.storage_place %}
+                <a href="/storage/{{ stock.storage_place_id }}">{{ stock.storage_place.full_path }}</a>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

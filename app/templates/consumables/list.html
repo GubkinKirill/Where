@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set section = 'storage' %}
+{% block title %}Расходники — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/storage">Склад</a></div>
+    <h1>Расходники</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Мелочь, которую не нумеруют поштучно: мыши, патч-корды, переходники.
+      Учитывается количеством, а не карточками.
+    </div>
+  </div>
+  {% if user.can(UserRole.EDITOR) %}
+  <div class="actions">
+    <a class="btn btn--primary" href="/consumables/new">Завести позицию</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if low_count %}
+<div class="flash flash--warn">
+  Заканчивается позиций: {{ low_count }}. <a href="/reports/low-stock">Показать</a>
+</div>
+{% endif %}
+
+<form class="search" method="get" action="/consumables">
+  <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="название или категория" autocomplete="off">
+  <button class="btn" type="submit">Найти</button>
+</form>
+
+<form class="filters" method="get" action="/consumables">
+  {% if filters.q %}<input type="hidden" name="q" value="{{ filters.q }}">{% endif %}
+  <select name="category" onchange="this.form.submit()">
+    <option value="">Все категории</option>
+    {% for category in categories %}
+      <option value="{{ category }}" {{ 'selected' if filters.category == category }}>{{ category }}</option>
+    {% endfor %}
+  </select>
+  <select name="storage_place_id" onchange="this.form.submit()">
+    <option value="">Любое место</option>
+    {% for place in storage_places %}
+      <option value="{{ place.id }}" {{ 'selected' if filters.storage_place_id == place.id }}>{{ place.full_path }}</option>
+    {% endfor %}
+  </select>
+  <select name="low_only" onchange="this.form.submit()">
+    <option value="">Все остатки</option>
+    <option value="1" {{ 'selected' if filters.low_only }}>Только заканчивающиеся</option>
+  </select>
+  <select name="include_inactive" onchange="this.form.submit()">
+    <option value="">В обороте</option>
+    <option value="1" {{ 'selected' if filters.include_inactive }}>Показать выведенные</option>
+  </select>
+</form>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not stocks %}
+      <div class="empty-state">Ничего не нашли.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Позиция</th>
+            <th>Категория</th>
+            <th style="text-align:right">Остаток</th>
+            <th style="text-align:right">Порог</th>
+            <th>Где лежит</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stock in stocks %}
+          <tr>
+            <td>
+              <a href="/consumables/{{ stock.id }}">{{ stock.name }}</a>
+              {% if not stock.is_active %}<div class="nested-mark">выведена из оборота</div>{% endif %}
+            </td>
+            <td>{{ stock.category or '—' }}</td>
+            <td style="text-align:right; white-space:nowrap">
+              {{ stock.quantity }} {{ stock.unit }}
+              {% if stock.is_out %}
+                <span class="badge badge--repair">нет</span>
+              {% elif stock.is_low %}
+                <span class="badge badge--incomplete">мало</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right">{{ stock.min_quantity or '—' }}</td>
+            <td>
+              {% if stock.storage_place %}
+                <a href="/storage/{{ stock.storage_place_id }}">{{ stock.storage_place.full_path }}</a>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

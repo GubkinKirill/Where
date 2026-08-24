@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% set section = 'storage' %}
+{% block title %}Склад — Учёт техники{% endblock %}
+
+{% macro place_row(line, depth) %}
+<li>
+  <div class="rows__main">
+    <div class="rows__title">
+      <span style="display:inline-block; width:{{ depth * 16 }}px"></span>
+      <a href="/storage/{{ line.place.id }}">{{ line.place.name }}</a>
+      <span class="type-chip">{{ line.place.kind | storage_kind_label }}</span>
+      {% if line.is_empty %}<span class="type-chip">пусто</span>{% endif %}
+    </div>
+    <div class="rows__sub">
+      <span style="display:inline-block; width:{{ depth * 16 }}px"></span>
+      код {{ line.place.code }}
+      {%- if line.total_items %} · единиц: {{ line.total_items }}{% endif %}
+      {%- if line.total_positions %} · позиций расходников: {{ line.total_positions }}{% endif %}
+    </div>
+  </div>
+</li>
+{% for child in line.children %}{{ place_row(child, depth + 1) }}{% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Склад</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Два режима учёта рядом: пронумерованные единицы на полках и расходники количеством.
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/consumables">Расходники</a>
+    {% if user.can(UserRole.ADMIN) %}
+      <a class="btn btn--ghost" href="/directories/storage">Места хранения</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if low %}
+<div class="flash flash--warn">
+  Заканчивается позиций: {{ low | length }} —
+  {% for stock in low[:5] %}
+    <a href="/consumables/{{ stock.id }}">{{ stock.name }}</a> ({{ stock.quantity }} {{ stock.unit }}){% if not loop.last %}, {% endif %}
+  {% endfor %}
+  {%- if low | length > 5 %} и ещё {{ low | length - 5 }}{% endif %}.
+  <a href="/reports/low-stock">Весь список</a>
+</div>
+{% endif %}
+
+<section class="card">
+  <div class="card__head">
+    <h2>Места хранения</h2>
+    <a href="/items?loc_kind=storage">все единицы на складе</a>
+  </div>
+  <div class="card__body card__body--flush">
+    {% if not places %}
+      <div class="empty-state">
+        Мест хранения нет.
+        {% if user.can(UserRole.ADMIN) %}<a href="/directories/storage/new">Завести первое</a>.{% endif %}
+      </div>
+    {% else %}
+    <ul class="rows">
+      {% for line in places %}{{ place_row(line, 0) }}{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card__head">
+    <h2>Расходники</h2>
+    <a href="/consumables">весь список</a>
+  </div>
+  <div class="card__body">
+    <p style="margin:0">
+      Позиций в обороте: <strong>{{ positions }}</strong>. Мелочь, которую не нумеруют
+      поштучно, живёт отдельным количественным учётом: приход, расход и корректировка
+      после пересчёта пишутся в журнал позиции.
+    </p>
+  </div>
+</section>
+{% endblock %}

@@ -2,6 +2,7 @@
 location snapshots written into the movement log."""
 
 from app.models.enums import (
+    ConsumableReason,
     ItemStatus,
     LocationKind,
     MovementReason,
@@ -88,6 +89,12 @@ REQUEST_STATUS_LABELS = {
     RequestStatus.REJECTED: "Отклонена",
 }
 
+CONSUMABLE_REASON_LABELS = {
+    ConsumableReason.RECEIPT: "Приход",
+    ConsumableReason.ISSUE: "Расход",
+    ConsumableReason.ADJUST: "Корректировка",
+}
+
 STORAGE_KIND_LABELS = {
     StoragePlaceKind.CABINET: "Шкаф",
     StoragePlaceKind.SHELF: "Полка",
@@ -126,6 +133,10 @@ def request_kind_label(value: RequestKind | str) -> str:
 
 def request_status_label(value: RequestStatus | str) -> str:
     return REQUEST_STATUS_LABELS.get(RequestStatus(value), str(value))
+
+
+def consumable_reason_label(value: ConsumableReason | str) -> str:
+    return CONSUMABLE_REASON_LABELS.get(ConsumableReason(value), str(value))
 
 
 def storage_kind_label(value: StoragePlaceKind | str) -> str:

@@ -25,7 +25,9 @@ from app.models.item import Item, ItemType, NumberSequence
 from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.request import EquipmentRequest
 from app.models.user import User
+from app.schemas.consumable import ConsumableForm
 from app.schemas.item import ItemForm
+from app.services import consumables as consumables_service
 from app.services import items as items_service
 from app.services import movements as movements_service
 from app.services.location import LocationRef
@@ -84,6 +86,7 @@ def main() -> int:
 
         _seed_items(db, users, types, places, employees, rooms)
         _seed_requests(db, employees)
+        _seed_consumables(db, users, places, employees)
         db.commit()
 
     print(
@@ -117,6 +120,47 @@ def _seed_users(db) -> dict[str, User]:
     }
     db.add_all(users.values())
     return users
+
+
+CONSUMABLES = [
+    # name, category, unit, on hand, threshold, place, notes
+    ("Мышь проводная USB", "Периферия", "шт.", 6, 3, "shelf2", None),
+    ("Клавиатура USB", "Периферия", "шт.", 4, 2, "shelf2", None),
+    ("Патч-корд UTP 2 м", "Кабели", "шт.", 12, 10, "shelf2", "Синие, cat.5e"),
+    ("Кабель питания C13", "Кабели", "шт.", 2, 5, "shelf2", None),
+    ("Переходник HDMI–VGA", "Переходники", "шт.", 0, 2, "shelf2", "Кончились, заказаны"),
+    ("Карта microSD 32 ГБ", "Носители", "шт.", 8, 4, "shelf1", "Под образы Raspberry Pi"),
+]
+
+
+def _seed_consumables(db, users, places, employees) -> None:
+    """Quantity accounting, with a couple of positions deliberately running low."""
+    editor = users["editor"]
+    for name, category, unit, quantity, threshold, place, notes in CONSUMABLES:
+        stock = consumables_service.create_stock(
+            db,
+            form=ConsumableForm(
+                name=name,
+                category=category,
+                unit=unit,
+                min_quantity=threshold,
+                storage_place_id=places[place].id,
+                notes=notes,
+            ),
+            quantity=quantity,
+            actor=editor,
+            comment="Начальный остаток",
+        )
+        if name.startswith("Мышь"):
+            consumables_service.issue(
+                db,
+                stock=stock,
+                quantity=1,
+                employee_id=employees["petrov"].id,
+                actor=editor,
+                comment="Взамен сломанной",
+            )
+    db.flush()
 
 
 def _seed_employee_accounts(db, employees) -> None:
