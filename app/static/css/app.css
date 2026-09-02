@@ -54,12 +54,14 @@ h2 { font-size: 15px; }
   white-space: nowrap;
 }
 .brand:hover { text-decoration: none; }
+.brand.is-active { color: #fff; }
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  overflow-x: auto;
   flex: 1;
+  min-width: 0;
   scrollbar-width: none;
 }
 .nav::-webkit-scrollbar { display: none; }
@@ -75,6 +77,50 @@ h2 { font-size: 15px; }
 .nav a.is-active { background: rgba(255, 255, 255, .14); color: #fff; }
 
 .topbar__user { font-size: 13px; color: #9aa5b4; white-space: nowrap; }
+
+/* справка живёт справа, рядом с профилем: она не раздел, а подсказка,
+   и из полосы разделов её вытесняли вкладки */
+.topbar__link {
+  color: #c3cad6;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.topbar__link:hover { background: rgba(255, 255, 255, .08); text-decoration: none; }
+.topbar__link.is-active { background: rgba(255, 255, 255, .14); color: #fff; }
+
+/* «Ещё» — редкие разделы: отчёт, справочники, учётки.
+   <details> вместо скрипта, закрывает его пятью строками в base.html */
+.menu { position: relative; }
+.menu > summary { list-style: none; cursor: pointer; user-select: none; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary::after { content: " ▾"; color: #8b95a5; }
+.menu[open] > summary { background: rgba(255, 255, 255, .14); color: #fff; }
+
+.menu__list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 190px;
+  padding: 6px;
+  background: #262d38;
+  border: 1px solid #3a424e;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu__list a {
+  color: #c3cad6;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.menu__list a:hover { background: rgba(255, 255, 255, .08); color: #fff; text-decoration: none; }
 
 .page {
   max-width: 1180px;
@@ -402,6 +448,8 @@ table.list tbody tr:hover { background: #fafbfc; }
 
   .desktop-only { display: none; }
   .mobile-only { display: block; }
+
+  .nav { flex-wrap: nowrap; overflow-x: auto; }
 
   /* залипающая панель действий — главный сценарий: телефон у шкафа */
   .actionbar {

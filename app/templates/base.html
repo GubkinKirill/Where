@@ -12,21 +12,14 @@
 {% if user %}
 <header class="topbar">
   <div class="topbar__inner">
-    <a class="brand" href="/">Учёт техники</a>
+    <a class="brand {{ 'is-active' if section == 'dashboard' }}" href="/">Учёт техники</a>
     <nav class="nav">
       {% if user.is_staff %}
-        <a href="/dashboard" class="{{ 'is-active' if section == 'dashboard' }}">Сводка</a>
         <a href="/items" class="{{ 'is-active' if section == 'items' }}">Единицы</a>
         <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
         <a href="/storage" class="{{ 'is-active' if section == 'storage' }}">Склад</a>
         <a href="/directories/employees" class="{{ 'is-active' if section == 'employees' }}">Сотрудники</a>
         <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
-        <a href="/requests" class="{{ 'is-active' if section == 'requests' }}">Заявки</a>
-        <a href="/reports/unconfirmed" class="{{ 'is-active' if section == 'reports' }}">Не подтверждено</a>
-        <a href="/directories" class="{{ 'is-active' if section == 'directories' }}">Справочники</a>
-        {% if user.role == UserRole.ADMIN %}
-          <a href="/admin/users" class="{{ 'is-active' if section == 'users' }}">Учётки</a>
-        {% endif %}
       {% else %}
         <a href="/cabinet" class="{{ 'is-active' if section == 'cabinet' }}">Моя техника</a>
         <a href="/cabinet/colleagues" class="{{ 'is-active' if section == 'colleagues' }}">Коллеги</a>
@@ -34,8 +27,20 @@
         <a href="/cabinet/requests" class="{{ 'is-active' if section == 'my-requests' }}">Заявки</a>
         <a href="/cabinet/history" class="{{ 'is-active' if section == 'my-history' }}">История</a>
       {% endif %}
-      <a href="/help" class="{{ 'is-active' if section == 'help' }}">Справка</a>
     </nav>
+    {% if user.is_staff %}
+    <details class="menu">
+      <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users') }}">Ещё</summary>
+      <div class="menu__list">
+        <a href="/reports/unconfirmed">Не подтверждено</a>
+        <a href="/directories">Справочники</a>
+        {% if user.role == UserRole.ADMIN %}
+          <a href="/admin/users">Учётки</a>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
+    <a class="topbar__link {{ 'is-active' if section == 'help' }}" href="/help">Справка</a>
     <a class="topbar__user desktop-only" href="/profile">{{ user.display_name }} · {{ user.role | role_label }}</a>
     <form method="post" action="/logout">
       <button class="btn btn--sm btn--ghost" type="submit">Выйти</button>
@@ -55,5 +60,21 @@
 </main>
 
 {% block after %}{% endblock %}
+
+<script>
+  /* <details> само не закрывается: захлопываем меню по клику мимо и по Esc */
+  document.addEventListener('click', function (event) {
+    document.querySelectorAll('details.menu[open]').forEach(function (menu) {
+      if (!menu.contains(event.target)) menu.removeAttribute('open');
+    });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('details.menu[open]').forEach(function (menu) {
+        menu.removeAttribute('open');
+      });
+    }
+  });
+</script>
 </body>
 </html>
