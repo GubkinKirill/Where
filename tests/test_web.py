@@ -119,3 +119,16 @@ def test_search_ignores_case_in_russian(client, db, editor, types, shelf):
 
     found = client.get("/items", params={"q": "монитор"}).text
     assert item.inv_number in found
+
+
+def test_the_summary_offers_no_new_item_button_to_a_viewer(client, db, types, shelf):
+    viewer = User(
+        username="viewer",
+        role=UserRole.VIEWER,
+        password_hash=hash_password("secret12345"),
+    )
+    db.add(viewer)
+    db.commit()
+    sign_in(client, "viewer")
+
+    assert "/items/new" not in client.get("/dashboard").text

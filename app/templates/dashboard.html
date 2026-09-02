@@ -9,7 +9,9 @@
     <div class="crumbs" style="margin-top:6px">Где что находится и что требует внимания</div>
   </div>
   <div class="actions">
-    <a class="btn btn--primary" href="/items/new">Добавить единицу</a>
+    {% if user.can(UserRole.EDITOR) %}
+      <a class="btn btn--primary" href="/items/new">Добавить единицу</a>
+    {% endif %}
   </div>
 </div>
 
