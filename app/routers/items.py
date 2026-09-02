@@ -20,13 +20,20 @@ router = APIRouter()
 
 @router.get("/items", response_class=HTMLResponse)
 def item_list(request: Request, db: DbSession, user: ViewerUser) -> HTMLResponse:
-    filters = ItemFilter(**dict(request.query_params))
+    # a stale bookmark or a hand-typed value must not take the whole list down
+    try:
+        filters = ItemFilter(**dict(request.query_params))
+        bad_filter = None
+    except ValidationError:
+        filters = ItemFilter()
+        bad_filter = "Фильтр не понят, показан весь список."
     found = items_service.search_items(db, filters)
     context = {
         "user": user,
         "items": found,
         "filters": filters,
         "total": items_service.count_items(db),
+        "error": bad_filter,
         **form_choices(db),
     }
     if request.headers.get("HX-Request"):

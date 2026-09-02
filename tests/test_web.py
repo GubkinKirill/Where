@@ -121,6 +121,30 @@ def test_search_ignores_case_in_russian(client, db, editor, types, shelf):
     assert item.inv_number in found
 
 
+def test_a_mistyped_address_shows_the_not_found_page(client, db, editor, types, shelf):
+    """/items/abc is a page that is not there, not a page of validation JSON."""
+    db.commit()
+    sign_in(client, "editor")
+
+    response = client.get("/items/abc")
+
+    assert response.status_code == 404
+    assert response.text.lstrip().lower().startswith("<!doctype")
+
+
+def test_an_unreadable_filter_still_shows_the_list(client, db, editor, types, shelf):
+    """A stale bookmark must not take the whole list down."""
+    item = make_item(db, types["MON"], name="Монитор Dell", at=LocationRef.storage(shelf.id))
+    db.commit()
+    sign_in(client, "editor")
+
+    response = client.get("/items", params={"status": "такого-статуса-нет"})
+
+    assert response.status_code == 200
+    assert item.inv_number in response.text
+    assert "Фильтр не понят" in response.text
+
+
 def test_the_summary_offers_no_new_item_button_to_a_viewer(client, db, types, shelf):
     viewer = User(
         username="viewer",

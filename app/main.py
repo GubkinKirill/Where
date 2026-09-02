@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -66,6 +67,13 @@ def handle_access_denied(request: Request, exc: AccessDenied) -> HTMLResponse:
 @app.exception_handler(NoEmployeeLinked)
 def handle_no_employee(request: Request, exc: NoEmployeeLinked) -> HTMLResponse:
     return render(request, "cabinet/unlinked.html", {"user": _user_of(request)}, status_code=404)
+
+
+@app.exception_handler(RequestValidationError)
+def handle_bad_request(request: Request, exc: RequestValidationError) -> HTMLResponse:
+    """A mistyped address — /items/abc — is a page that is not there, not a stack
+    of validation JSON the person who typed it can do anything with."""
+    return render(request, "not_found.html", {"user": _user_of(request)}, status_code=404)
 
 
 @app.get("/")
