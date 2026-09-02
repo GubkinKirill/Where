@@ -11,7 +11,7 @@ from app.models.item import Item
 from app.models.movement import Movement
 from app.models.user import User
 from app.services.errors import ServiceError
-from app.services.movements import issue_item
+from app.services.movements import issue_item, return_to_storage
 
 
 def get_employee(db: Session, employee_id: int) -> Optional[Employee]:
@@ -104,6 +104,33 @@ def transfer_items(
             comment=note,
         )
         for item in items_of(db, source)
+    ]
+
+
+def return_all_to_storage(
+    db: Session,
+    *,
+    employee: Employee,
+    storage_place_id: Optional[int],
+    actor: Optional[User] = None,
+    comment: Optional[str] = None,
+) -> list[Movement]:
+    """Take everything one person holds back onto a shelf — the usual end of a
+    dismissal, when the equipment goes to the store rather than to a successor.
+    One log record per unit, exactly as if each had been returned by hand."""
+    if storage_place_id is None:
+        raise ServiceError("Выберите место хранения, куда принимаете технику.")
+
+    note = comment or f"Возврат от {employee.short_name}"
+    return [
+        return_to_storage(
+            db,
+            item=item,
+            storage_place_id=storage_place_id,
+            actor=actor,
+            comment=note,
+        )
+        for item in items_of(db, employee)
     ]
 
 

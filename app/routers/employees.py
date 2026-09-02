@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 
 from app.auth.deps import DbSession, EditorUser, ViewerUser
-from app.models.directory import Employee
+from app.models.directory import Employee, StoragePlace
 from app.routers.helpers import int_or_none
 from app.services import consumables as consumables_service
 from app.services import employees as employees_service
@@ -43,6 +43,9 @@ def employee_card(employee_id: int, request: Request, db: DbSession, user: Viewe
                     .order_by(Employee.full_name)
                 )
             ),
+            "storage_places": list(
+                db.scalars(select(StoragePlace).order_by(StoragePlace.code))
+            ),
         },
     )
 
@@ -74,6 +77,34 @@ async def transfer(employee_id: int, request: Request, db: DbSession, user: Edit
     return redirect(
         f"/employees/{target.id}",
         flash=f"Передано единиц: {len(moved)}. Каждая записана в журнал.",
+    )
+
+
+@router.post("/employees/{employee_id}/return-all")
+async def return_all(employee_id: int, request: Request, db: DbSession, user: EditorUser):
+    employee = employees_service.get_employee(db, employee_id)
+    if employee is None:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+
+    form = await request.form()
+    try:
+        returned = employees_service.return_all_to_storage(
+            db,
+            employee=employee,
+            storage_place_id=int_or_none(form.get("storage_place_id")),
+            actor=user,
+            comment=form.get("comment"),
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return redirect(f"/employees/{employee_id}", flash=str(exc), kind="warn")
+
+    db.commit()
+    if not returned:
+        return redirect(f"/employees/{employee_id}", flash="Возвращать нечего.", kind="warn")
+    return redirect(
+        f"/employees/{employee_id}",
+        flash=f"Принято на склад единиц: {len(returned)}. Каждая записана в журнал.",
     )
 
 

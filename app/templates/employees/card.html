@@ -121,6 +121,33 @@
         </form>
       </div>
     </section>
+
+    <section class="card">
+      <div class="card__head"><h2>Принять всё на склад</h2></div>
+      <div class="card__body">
+        <form method="post" action="/employees/{{ employee.id }}/return-all"
+              onsubmit="return confirm('Принять на склад все {{ items | length }} ед.?')">
+          <div class="form-row">
+            <label for="return_place_id">Куда <span class="req">*</span></label>
+            <select id="return_place_id" name="storage_place_id" required>
+              <option value="">— выберите место хранения —</option>
+              {% for place in storage_places %}
+                <option value="{{ place.id }}">{{ place.code }} · {{ place.name }}</option>
+              {% endfor %}
+            </select>
+            <div class="hint">
+              Обычный конец увольнения, когда технику не передают преемнику.
+              Все {{ items | length }} ед. лягут на выбранное место, на каждую — своя запись в журнале.
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="return_comment">Комментарий</label>
+            <input type="text" id="return_comment" name="comment" placeholder="Возврат при увольнении">
+          </div>
+          <button class="btn btn--primary" type="submit">Принять на склад</button>
+        </form>
+      </div>
+    </section>
     {% endif %}
 
     {% if consumables %}

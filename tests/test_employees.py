@@ -1,7 +1,7 @@
 import pytest
 
 from app.models.directory import Employee
-from app.models.enums import LocationKind, MovementReason
+from app.models.enums import ItemStatus, LocationKind, MovementReason
 from app.services import employees as employees_service
 from app.services import movements as movements_service
 from app.services.errors import ServiceError
@@ -81,3 +81,38 @@ def test_dismissed_employee_cannot_receive_new_items(db, types, shelf, employee,
 
     with pytest.raises(ServiceError):
         movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+
+
+def test_returning_everything_puts_it_all_on_one_shelf(db, employee, types, shelf, other_shelf, actor):
+    """The usual end of a dismissal: the equipment goes to the store, not to a
+    successor. One log record per unit, and each becomes a spare again."""
+    held = [
+        make_item(db, types["PC"], name="Блок", at=LocationRef.storage(other_shelf.id)),
+        make_item(db, types["MON"], name="Монитор", at=LocationRef.storage(other_shelf.id)),
+    ]
+    for item in held:
+        movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+    db.flush()
+    assert len(employees_service.items_of(db, employee)) == 2
+
+    returned = employees_service.return_all_to_storage(
+        db, employee=employee, storage_place_id=shelf.id, actor=actor
+    )
+
+    assert len(returned) == 2
+    assert employees_service.items_of(db, employee) == []
+    for item in held:
+        assert item.loc_kind is LocationKind.STORAGE
+        assert item.loc_storage_place_id == shelf.id
+        assert item.status is ItemStatus.RESERVE
+
+
+def test_returning_everything_needs_a_place_to_put_it(db, employee, types, other_shelf, actor):
+    item = make_item(db, types["MON"], at=LocationRef.storage(other_shelf.id))
+    movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+    db.flush()
+
+    with pytest.raises(ServiceError):
+        employees_service.return_all_to_storage(
+            db, employee=employee, storage_place_id=None, actor=actor
+        )
