@@ -2,11 +2,13 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from app.auth.providers import hash_password
 from app.db import get_db
 from app.main import app
 from app.models.enums import UserRole
+from app.models.kit import KitTemplate
 from app.models.user import User
 from app.services import movements as movements_service
 from app.services import users as users_service
@@ -104,3 +106,30 @@ def test_password_is_changed_from_the_profile(client, db, admin):
         follow_redirects=False,
     )
     assert response.status_code == 303
+
+
+def test_a_template_takes_more_lines_than_the_form_shows(client, db, admin, types):
+    """Three blank rows are a starting point, not a ceiling: the form grows by
+    a button and the server keeps every line it is sent."""
+    db.commit()
+    sign_in(client)
+
+    kinds = list(types.values())
+    response = client.post(
+        "/kits/templates/new",
+        data={
+            "name": "Комплект на много позиций",
+            "is_active": "1",
+            "line_type_id": [str(kind.id) for kind in kinds],
+            "line_quantity": ["2"] * len(kinds),
+            "line_note": [""] * len(kinds),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    template = db.scalar(
+        select(KitTemplate).where(KitTemplate.name == "Комплект на много позиций")
+    )
+    assert len(template.lines) == len(kinds)
+    assert "kit-add-line" in client.get("/kits/templates/new").text

@@ -25,52 +25,87 @@
 
       <h2 style="margin:22px 0 10px">Что должно быть в комплекте</h2>
       <div class="hint" style="margin-bottom:10px">
-        По одной строке на тип единицы. Пустые строки игнорируются, один тип — одна строка.
+        По одной строке на тип единицы. Строк можно добавить сколько нужно,
+        пустые игнорируются, один тип — одна строка.
       </div>
 
-      {% for line in lines %}
-      <div class="form-grid">
-        <div class="form-row">
-          <label>Тип</label>
-          <select name="line_type_id">
-            <option value="">— убрать позицию —</option>
-            {% for type in types %}
-              <option value="{{ type.id }}" {{ 'selected' if line.item_type_id == type.id }}>{{ type.name }}</option>
-            {% endfor %}
-          </select>
+      <div id="kit-lines">
+        {% for line in lines %}
+        <div class="kit-line">
+          <div class="form-grid">
+            <div class="form-row">
+              <label>Тип</label>
+              <select name="line_type_id">
+                <option value="">— убрать позицию —</option>
+                {% for type in types %}
+                  <option value="{{ type.id }}" {{ 'selected' if line.item_type_id == type.id }}>{{ type.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Количество</label>
+              <input type="number" name="line_quantity" min="1" value="{{ line.quantity }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Уточнение</label>
+            <input type="text" name="line_note" value="{{ line.note or '' }}" placeholder="Например: кабель 5 м, N-типа">
+          </div>
         </div>
-        <div class="form-row">
-          <label>Количество</label>
-          <input type="number" name="line_quantity" min="1" value="{{ line.quantity }}">
-        </div>
-      </div>
-      <div class="form-row">
-        <label>Уточнение</label>
-        <input type="text" name="line_note" value="{{ line.note or '' }}" placeholder="Например: кабель 5 м, N-типа">
-      </div>
-      {% endfor %}
+        {% endfor %}
 
-      {% for _ in range(blank_lines) %}
-      <div class="form-grid">
-        <div class="form-row">
-          <label>Тип</label>
-          <select name="line_type_id">
-            <option value="">— не задано —</option>
-            {% for type in types %}
-              <option value="{{ type.id }}">{{ type.name }}</option>
-            {% endfor %}
-          </select>
+        {% for _ in range(blank_lines) %}
+        <div class="kit-line">
+          <div class="form-grid">
+            <div class="form-row">
+              <label>Тип</label>
+              <select name="line_type_id">
+                <option value="">— не задано —</option>
+                {% for type in types %}
+                  <option value="{{ type.id }}">{{ type.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Количество</label>
+              <input type="number" name="line_quantity" min="1" value="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Уточнение</label>
+            <input type="text" name="line_note" placeholder="необязательно">
+          </div>
         </div>
-        <div class="form-row">
-          <label>Количество</label>
-          <input type="number" name="line_quantity" min="1" value="1">
-        </div>
+        {% endfor %}
       </div>
+
       <div class="form-row">
-        <label>Уточнение</label>
-        <input type="text" name="line_note" placeholder="необязательно">
+        <button class="btn" type="button" id="kit-add-line">Добавить строку</button>
       </div>
-      {% endfor %}
+
+      <template id="kit-blank-line">
+        <div class="kit-line">
+          <div class="form-grid">
+            <div class="form-row">
+              <label>Тип</label>
+              <select name="line_type_id">
+                <option value="">— не задано —</option>
+                {% for type in types %}
+                  <option value="{{ type.id }}">{{ type.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Количество</label>
+              <input type="number" name="line_quantity" min="1" value="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Уточнение</label>
+            <input type="text" name="line_note" placeholder="необязательно">
+          </div>
+        </div>
+      </template>
 
       <div class="form-row check">
         <label>
@@ -86,4 +121,21 @@
     </form>
   </div>
 </section>
+
+<script>
+  /* строк комплектности бывает больше трёх: добавляем по кнопке,
+     сервер принимает столько, сколько прислали */
+  (function () {
+    var button = document.getElementById('kit-add-line');
+    var host = document.getElementById('kit-lines');
+    var blank = document.getElementById('kit-blank-line');
+    if (!button || !host || !blank) return;
+    button.addEventListener('click', function () {
+      var line = blank.content.firstElementChild.cloneNode(true);
+      host.appendChild(line);
+      var select = line.querySelector('select');
+      if (select) select.focus();
+    });
+  })();
+</script>
 {% endblock %}
