@@ -2,6 +2,7 @@
 so the shape of each one is declared here and rendered by two shared templates."""
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Request
@@ -11,22 +12,28 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import AdminUser, DbSession, ViewerUser
-from app.i18n import STORAGE_KIND_LABELS
+from app.i18n import PROJECT_STATUS_LABELS, STORAGE_KIND_LABELS
 from app.models.base import Base
 from app.models.directory import Department, Employee, Room, StoragePlace
-from app.models.enums import StoragePlaceKind
+from app.models.enums import ProjectStatus, StoragePlaceKind
 from app.models.item import ItemType
-from app.routers.helpers import int_or_none
+from app.models.project import Project
+from app.routers.helpers import date_or_none, int_or_none
+from app.services.errors import ServiceError
 from app.templating import redirect, render
 
 router = APIRouter()
+
+
+# option lists whose values are enum strings rather than ids of other records
+ENUM_OPTIONS = ("storage_kinds", "project_statuses")
 
 
 @dataclass(frozen=True)
 class Field:
     name: str
     label: str
-    kind: str = "text"  # text | number | checkbox | select | textarea | list
+    kind: str = "text"  # text | number | date | checkbox | select | textarea | list
     required: bool = False
     options: Optional[str] = None
     hint: str = ""
@@ -123,6 +130,36 @@ DIRECTORIES: dict[str, Directory] = {
         columns=(("number", "Номер"), ("floor", "Этаж"), ("description", "Описание")),
         order=lambda: (Room.number,),
     ),
+    "projects": Directory(
+        slug="projects",
+        title="Проекты",
+        one="проект",
+        model=Project,
+        fields=(
+            Field("code", "Код", required=True, hint="например, PRJ-04"),
+            Field("name", "Название", required=True),
+            Field("customer", "Заказчик"),
+            Field("starts_on", "Начало", kind="date"),
+            Field("ends_on", "Окончание", kind="date"),
+            Field(
+                "status",
+                "Состояние",
+                kind="select",
+                options="project_statuses",
+                required=True,
+            ),
+            Field("notes", "Заметки", kind="textarea"),
+        ),
+        columns=(
+            ("code", "Код"),
+            ("name", "Название"),
+            ("customer", "Заказчик"),
+            ("status", "Состояние"),
+            ("ends_on", "Окончание"),
+        ),
+        order=lambda: (Project.code,),
+        card_url="/projects",
+    ),
     "storage": Directory(
         slug="storage",
         title="Места хранения",
@@ -190,13 +227,13 @@ async def create_record(slug: str, request: Request, db: DbSession, user: AdminU
         return render(request, "not_found.html", {"user": user}, status_code=404)
     form = await request.form()
     record = spec.model()
-    _apply(record, spec, form)
-    db.add(record)
     try:
+        _apply(record, spec, form)
+        db.add(record)
         db.commit()
-    except IntegrityError:
+    except (IntegrityError, ServiceError) as exc:
         db.rollback()
-        return _form_error(request, db, user, spec, None, form)
+        return _form_error(request, db, user, spec, None, form, exc)
     return redirect(f"/directories/{slug}", flash="Запись добавлена.")
 
 
@@ -234,12 +271,12 @@ async def update_record(
     if record is None:
         return render(request, "not_found.html", {"user": user}, status_code=404)
     form = await request.form()
-    _apply(record, spec, form)
     try:
+        _apply(record, spec, form)
         db.commit()
-    except IntegrityError:
+    except (IntegrityError, ServiceError) as exc:
         db.rollback()
-        return _form_error(request, db, user, spec, record, form)
+        return _form_error(request, db, user, spec, record, form, exc)
     return redirect(f"/directories/{slug}", flash="Изменения сохранены.")
 
 
@@ -275,6 +312,9 @@ def _options(db: Session) -> dict[str, list[tuple[Any, str]]]:
             (p.id, p.full_path) for p in db.scalars(select(StoragePlace).order_by(StoragePlace.code))
         ],
         "storage_kinds": [(kind.value, STORAGE_KIND_LABELS[kind]) for kind in StoragePlaceKind],
+        "project_statuses": [
+            (status.value, PROJECT_STATUS_LABELS[status]) for status in ProjectStatus
+        ],
     }
 
 
@@ -286,6 +326,10 @@ def _cell(record: Any, name: str) -> str:
         return "—"
     if isinstance(value, StoragePlaceKind):
         return STORAGE_KIND_LABELS[value]
+    if isinstance(value, ProjectStatus):
+        return PROJECT_STATUS_LABELS[value]
+    if isinstance(value, date):
+        return value.strftime("%d.%m.%Y")
     return str(value)
 
 
@@ -295,6 +339,8 @@ def _values(record: Any, spec: Directory) -> dict[str, Any]:
         value = getattr(record, field.name, None)
         if field.kind == "list":
             values[field.name] = "\n".join(value or [])
+        elif field.kind == "date":
+            values[field.name] = value.isoformat() if value else ""
         elif hasattr(value, "value"):  # enum
             values[field.name] = value.value
         else:
@@ -309,17 +355,26 @@ def _apply(record: Any, spec: Directory, form) -> None:
             setattr(record, field.name, raw is not None)
         elif field.kind == "number":
             setattr(record, field.name, int_or_none(raw))
+        elif field.kind == "date":
+            setattr(record, field.name, date_or_none(raw))
         elif field.kind == "list":
             lines = [line.strip() for line in (raw or "").splitlines() if line.strip()]
             setattr(record, field.name, lines)
-        elif field.kind == "select" and field.options != "storage_kinds":
+        elif field.kind == "select" and field.options not in ENUM_OPTIONS:
             setattr(record, field.name, int_or_none(raw))
         else:
             value = (raw or "").strip()
             setattr(record, field.name, value or None if not field.required else value)
 
 
-def _form_error(request: Request, db: Session, user, spec: Directory, record, form):
+def _form_error(
+    request: Request, db: Session, user, spec: Directory, record, form, exc: Exception
+):
+    message = (
+        str(exc)
+        if isinstance(exc, ServiceError)
+        else "Значение уже занято или нарушает связи справочника."
+    )
     return render(
         request,
         "directories/form.html",
@@ -329,7 +384,7 @@ def _form_error(request: Request, db: Session, user, spec: Directory, record, fo
             "record": record,
             "values": dict(form),
             "options": _options(db),
-            "error": "Значение уже занято или нарушает связи справочника.",
+            "error": message,
         },
         status_code=400,
     )

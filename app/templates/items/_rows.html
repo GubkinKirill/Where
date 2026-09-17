@@ -30,6 +30,9 @@
             <td>
               {% if item.loc_kind == LocationKind.INSIDE %}<span class="nested-mark">└</span> {% endif %}
               {{ item.name }}
+              {% if item.project %}
+                <div class="nested-mark">проект <a href="/projects/{{ item.project.id }}">{{ item.project.code }}</a></div>
+              {% endif %}
             </td>
             <td><span class="type-chip">{{ item.type.name }}</span></td>
             <td>{{ ui.status_badge(item.status) }}</td>

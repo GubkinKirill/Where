@@ -12,7 +12,9 @@ from app.models.enums import ItemStatus, LocationKind, MovementReason
 from app.models.item import Item
 from app.models.movement import Movement
 from app.services import consumables as consumables_service
+from app.services import projects as projects_service
 from app.services import requests as requests_service
+from app.services import trips as trips_service
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,8 @@ def summary(db: Session) -> dict:
     unconfirmed = _unconfirmed_count(db)
     open_requests = requests_service.open_count(db)
     low_stock = consumables_service.low_stock(db)
+    late_trips = trips_service.overdue_trips(db)
+    open_trips = trips_service.open_trips(db)
 
     tiles = [
         Tile("Всего на учёте", total - by_status.get(ItemStatus.WRITTEN_OFF, 0), "/items",
@@ -50,8 +54,12 @@ def summary(db: Session) -> dict:
              f"/items?loc_kind={LocationKind.STORAGE.value}"),
         Tile("В кабинетах", by_location.get(LocationKind.ROOM, 0),
              f"/items?loc_kind={LocationKind.ROOM.value}"),
+        Tile("В командировках", by_location.get(LocationKind.TRIP, 0), "/trips",
+             f"открытых поездок: {len(open_trips)}" if open_trips else "поездок нет"),
         Tile("В составе других", by_location.get(LocationKind.INSIDE, 0),
              f"/items?loc_kind={LocationKind.INSIDE.value}"),
+        Tile("Из проектов", projects_service.project_owned_count(db), "/projects",
+             "числится не за предприятием"),
         Tile("В ремонте", by_status.get(ItemStatus.REPAIR, 0),
              f"/items?status={ItemStatus.REPAIR.value}",
              tone="warn" if by_status.get(ItemStatus.REPAIR) else ""),
@@ -62,6 +70,9 @@ def summary(db: Session) -> dict:
              "сотрудник ещё не нажал «Получил»", tone="warn" if unconfirmed else ""),
         Tile("Просрочен возврат", len(overdue), "/reports/overdue",
              "срок возврата прошёл", tone="warn" if overdue else ""),
+        Tile("Не вернулись из поездки", len(late_trips), "/trips",
+             "срок командировки прошёл, вещи ещё там",
+             tone="warn" if late_trips else ""),
         Tile("Открытых заявок", open_requests, "/requests", "от сотрудников",
              tone="warn" if open_requests else ""),
         Tile("Заканчивается на складе", len(low_stock), "/reports/low-stock",
@@ -73,6 +84,8 @@ def summary(db: Session) -> dict:
         "low_stock": low_stock,
         "attention": attention,
         "overdue": overdue,
+        "trips": open_trips,
+        "late_trips": late_trips,
         "recent": recent_movements(db),
         "by_status": by_status,
         "total": total,

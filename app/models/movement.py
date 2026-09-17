@@ -8,6 +8,7 @@ from app.models.base import Base, enum_column, now
 from app.models.directory import Employee, Room, StoragePlace
 from app.models.enums import LocationKind, MovementReason
 from app.models.item import Item
+from app.models.trip import Trip
 from app.models.user import User
 
 
@@ -50,6 +51,9 @@ class Movement(Base):
     )
     from_employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("employees.id"), default=None)
     from_room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id"), default=None)
+    from_trip_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("trips.id"), index=True, default=None
+    )
     from_external_note: Mapped[Optional[str]] = mapped_column(String(200), default=None)
     from_label: Mapped[str] = mapped_column(String(300), default="")
 
@@ -60,6 +64,9 @@ class Movement(Base):
     )
     to_employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("employees.id"), default=None)
     to_room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id"), default=None)
+    to_trip_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("trips.id"), index=True, default=None
+    )
     to_external_note: Mapped[Optional[str]] = mapped_column(String(200), default=None)
     to_label: Mapped[str] = mapped_column(String(300), default="")
 
@@ -73,6 +80,7 @@ class Movement(Base):
     )
     from_employee: Mapped[Optional[Employee]] = relationship(foreign_keys=[from_employee_id])
     from_room: Mapped[Optional[Room]] = relationship(foreign_keys=[from_room_id])
+    from_trip: Mapped[Optional[Trip]] = relationship(foreign_keys=[from_trip_id])
 
     to_parent_item: Mapped[Optional[Item]] = relationship(foreign_keys=[to_parent_item_id])
     to_storage_place: Mapped[Optional[StoragePlace]] = relationship(
@@ -80,6 +88,7 @@ class Movement(Base):
     )
     to_employee: Mapped[Optional[Employee]] = relationship(foreign_keys=[to_employee_id])
     to_room: Mapped[Optional[Room]] = relationship(foreign_keys=[to_room_id])
+    to_trip: Mapped[Optional[Trip]] = relationship(foreign_keys=[to_trip_id])
 
     @property
     def needs_acknowledgement(self) -> bool:

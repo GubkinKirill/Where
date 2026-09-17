@@ -12,6 +12,10 @@
   внутри <a href="/items/{{ item.loc_parent_item_id }}" class="inv">{{ item.parent_item.inv_number if item.parent_item else '—' }}</a>
 {%- elif item.loc_kind == LocationKind.ROOM %}
   кабинет <a href="/items?room_id={{ item.loc_room_id }}">{{ item.room.number if item.room else '—' }}</a>
+{%- elif item.loc_kind == LocationKind.TRIP %}
+  {%- if item.trip %}
+  <a href="/trips/{{ item.loc_trip_id }}">{{ item.trip.destination }}</a>, {{ item.trip.employee.short_name }}
+  {%- else %}командировка{% endif %}
 {%- elif item.loc_kind == LocationKind.EXTERNAL %}
   {{ item.loc_external_note }}
 {%- else %}

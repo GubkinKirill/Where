@@ -25,6 +25,7 @@ DEFAULT_REASONS = {
     LocationKind.STORAGE: MovementReason.TO_STORAGE,
     LocationKind.PERSON: MovementReason.ISSUE,
     LocationKind.ROOM: MovementReason.TO_STORAGE,
+    LocationKind.TRIP: MovementReason.TRIP_OUT,
     LocationKind.EXTERNAL: MovementReason.TRANSFER_OUT,
     LocationKind.WRITTEN_OFF: MovementReason.WRITE_OFF,
 }

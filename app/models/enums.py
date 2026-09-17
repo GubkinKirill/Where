@@ -15,6 +15,8 @@ class LocationKind(StrEnum):
     STORAGE = "storage"
     PERSON = "person"
     ROOM = "room"
+    # travelled out with somebody: the target is a Trip, which knows who and where
+    TRIP = "trip"
     EXTERNAL = "external"
     WRITTEN_OFF = "written_off"
 
@@ -27,6 +29,9 @@ class MovementReason(StrEnum):
     UNINSTALL = "uninstall"
     TO_STORAGE = "to_storage"
     TRANSFER_OUT = "transfer_out"
+    TRIP_OUT = "trip_out"
+    TRIP_RETURN = "trip_return"
+    TRIP_LEFT = "trip_left"
     REPAIR = "repair"
     WRITE_OFF = "write_off"
 
@@ -77,3 +82,18 @@ class ConsumableReason(StrEnum):
     RECEIPT = "receipt"
     ISSUE = "issue"
     ADJUST = "adjust"
+
+
+class ProjectStatus(StrEnum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    CLOSED = "closed"
+
+    @property
+    def is_open(self) -> bool:
+        return self is not ProjectStatus.CLOSED
+
+
+class TripStatus(StrEnum):
+    OPEN = "open"
+    CLOSED = "closed"

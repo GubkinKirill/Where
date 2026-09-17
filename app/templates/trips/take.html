@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'trips' %}
+{% block title %}{{ trip.code }} — что берут с собой{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/trips">Командировки</a> / <a href="/trips/{{ trip.id }}">{{ trip.code }}</a> / что берут
+</div>
+<h1 style="margin-bottom:6px">Что берут в командировку</h1>
+<p class="hint" style="margin-bottom:16px">
+  {{ trip.employee.short_name }} · {{ trip.destination }} · выезд {{ trip.departs_on | d }}.
+  На каждую отмеченную единицу запишется перемещение. Вложенное внутрь контейнера
+  едет вместе с ним и в списке не показывается.
+</p>
+
+<form method="post" action="/trips/{{ trip.id }}/take">
+  <section class="card">
+    <div class="card__head">
+      <h2>Свободные единицы</h2>
+      <input type="search" id="pick-filter" placeholder="Фильтр: номер, название, место"
+             autocomplete="off" style="max-width:280px">
+    </div>
+    <div class="card__body card__body--flush">
+      {% if not candidates %}
+        <div class="empty-state">Брать нечего: всё либо уже в поездке, либо вложено внутрь другой единицы.</div>
+      {% else %}
+      <div class="table-wrap">
+        <table class="list">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>Номер</th>
+              <th>Название</th>
+              <th>Статус</th>
+              <th>Где сейчас</th>
+            </tr>
+          </thead>
+          <tbody id="pick-rows">
+            {% for item in candidates %}
+            <tr>
+              <td><input type="checkbox" name="item_id" value="{{ item.id }}" id="pick-{{ item.id }}"></td>
+              <td><label for="pick-{{ item.id }}" class="inv">{{ item.inv_number }}</label></td>
+              <td>
+                <label for="pick-{{ item.id }}">{{ item.name }}</label>
+                {% if item.project %}<div class="nested-mark">проект {{ item.project.code }}</div>{% endif %}
+              </td>
+              <td>{{ ui.status_badge(item.status) }}</td>
+              <td>{{ ui.location_cell(item) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card" style="max-width:640px">
+    <div class="card__body">
+      <div class="form-row">
+        <label for="comment">Комментарий к перемещению</label>
+        <input type="text" id="comment" name="comment"
+               placeholder="По умолчанию: командировка {{ trip.code }}, {{ trip.destination }}">
+      </div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Записать в командировку</button>
+        <a class="btn" href="/trips/{{ trip.id }}">Отмена</a>
+      </div>
+    </div>
+  </section>
+</form>
+
+<script>
+  /* список может быть длинным, а ищут обычно по инвентарному номеру */
+  var filter = document.getElementById('pick-filter');
+  if (filter) {
+    filter.addEventListener('input', function () {
+      var needle = this.value.trim().toLowerCase();
+      document.querySelectorAll('#pick-rows tr').forEach(function (row) {
+        row.hidden = needle !== '' && row.textContent.toLowerCase().indexOf(needle) === -1;
+      });
+    });
+  }
+</script>
+{% endblock %}

@@ -66,6 +66,16 @@
     {% endfor %}
   </select>
 
+  <select name="owner">
+    <option value="">Любая принадлежность</option>
+    <option value="company" {{ 'selected' if filters.is_company_owned }}>Предприятие</option>
+    {% for project in projects %}
+      <option value="{{ project.id }}" {{ 'selected' if filters.owner_project_id == project.id }}>
+        {{ project.code }} — {{ project.name }}
+      </option>
+    {% endfor %}
+  </select>
+
   <label class="btn btn--sm btn--ghost">
     <input type="checkbox" name="include_written_off" value="true" {{ 'checked' if filters.include_written_off }}>
     со списанными

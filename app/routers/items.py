@@ -183,6 +183,7 @@ def _form_dict(form) -> dict[str, Any]:
         "warranty_until",
         "notes",
         "kit_template_id",
+        "project_id",
     )
     return {name: form.get(name) for name in fields if form.get(name) is not None}
 
@@ -201,6 +202,7 @@ def _values_from_item(item: Item) -> dict[str, Any]:
         "warranty_until": item.warranty_until.isoformat() if item.warranty_until else "",
         "notes": item.notes or "",
         "kit_template_id": item.kit_template_id or "",
+        "project_id": item.project_id or "",
     }
 
 

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'trips' %}
+{% set can_edit = user.can(UserRole.EDITOR) %}
+{% block title %}{{ trip.code }} — командировка{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/trips">Командировки</a> / {{ trip.code }}</div>
+    <h1><span class="inv">{{ trip.code }}</span> · {{ trip.destination }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      {% if trip.is_open %}
+        <span class="badge badge--{{ 'incomplete' if trip.is_overdue else 'in_use' }}">
+          {{ 'Просрочена' if trip.is_overdue else 'Открыта' }}
+        </span>
+      {% else %}
+        <span class="badge badge--reserve">Закрыта</span>
+      {% endif %}
+      <span class="type-chip">{{ trip.employee.short_name }}</span>
+      {% if trip.project %}
+        <a class="type-chip" href="/projects/{{ trip.project.id }}">{{ trip.project.code }}</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if can_edit %}
+  <div class="actions desktop-only">
+    {% if trip.is_open %}
+      <a class="btn btn--primary" href="/trips/{{ trip.id }}/take">Довезти единицу</a>
+      <a class="btn btn--ghost" href="/trips/{{ trip.id }}/edit">Изменить</a>
+      <a class="btn btn--ghost" href="/trips/{{ trip.id }}/act">Акт</a>
+      <form method="post" action="/trips/{{ trip.id }}/close">
+        <button class="btn" type="submit">Закрыть командировку</button>
+      </form>
+    {% else %}
+      <a class="btn btn--ghost" href="/trips/{{ trip.id }}/act">Акт</a>
+      <form method="post" action="/trips/{{ trip.id }}/reopen">
+        <button class="btn" type="submit">Открыть снова</button>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="cols">
+  <div>
+    <section class="card">
+      <div class="card__head">
+        <h2>С собой — {{ lines | length }}</h2>
+        {% if can_edit and trip.is_open %}
+          <a class="btn btn--sm" href="/trips/{{ trip.id }}/take">Довезти</a>
+        {% endif %}
+      </div>
+      <div class="card__body card__body--flush">
+        {% if not lines %}
+          <div class="empty-state">
+            Ничего не увезли. Нажмите «Довезти единицу», чтобы отметить, что взяли с собой.
+          </div>
+        {% else %}
+        <div class="table-wrap">
+          <table class="list">
+            <thead>
+              <tr>
+                <th>Номер</th>
+                <th>Название</th>
+                <th>Увезли</th>
+                <th>Что с ней</th>
+                <th>Где сейчас</th>
+                {% if can_edit and trip.is_open %}<th></th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in lines %}
+              <tr>
+                <td><a href="/items/{{ line.item.id }}" class="inv">{{ line.item.inv_number }}</a></td>
+                <td>
+                  {{ line.item.name }}
+                  {% if line.item.project %}
+                    <div class="nested-mark">проект {{ line.item.project.code }}</div>
+                  {% endif %}
+                </td>
+                <td>{{ line.taken_at | d }}</td>
+                <td>
+                  {% if line.is_away %}
+                    <span class="badge badge--in_use">{{ line.outcome | trip_outcome_label }}</span>
+                  {% else %}
+                    <span class="badge badge--reserve">{{ line.outcome | trip_outcome_label }}</span>
+                    {% if line.resolved_at %}<div class="nested-mark">{{ line.resolved_at | d }}</div>{% endif %}
+                  {% endif %}
+                </td>
+                <td>{{ ui.location_cell(line.item) }}</td>
+                {% if can_edit and trip.is_open %}
+                <td>
+                  {% if line.is_away %}
+                    <a class="btn btn--sm" href="/trips/{{ trip.id }}/return/{{ line.item.id }}">Вернулась</a>
+                    <a class="btn btn--sm btn--ghost" href="/trips/{{ trip.id }}/leave/{{ line.item.id }}">Оставлена</a>
+                  {% endif %}
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <section class="card">
+      <div class="card__head">
+        <h2>Поездка</h2>
+        {% if can_edit and trip.is_open %}
+          <a class="btn btn--sm btn--ghost" href="/trips/{{ trip.id }}/edit">Изменить</a>
+        {% endif %}
+      </div>
+      <div class="card__body">
+        <dl class="kv">
+          <dt>Кто едет</dt>
+          <dd><a href="/employees/{{ trip.employee_id }}">{{ trip.employee.short_name }}</a>
+              {%- if trip.employee.position %} · {{ trip.employee.position }}{% endif %}</dd>
+          <dt>Куда</dt><dd>{{ trip.destination }}</dd>
+          <dt>Зачем</dt><dd>{{ trip.purpose or '—' }}</dd>
+          <dt>Проект</dt>
+          <dd>
+            {% if trip.project %}
+              <a href="/projects/{{ trip.project.id }}">{{ trip.project.code }} — {{ trip.project.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+          <dt>Выезд</dt><dd>{{ trip.departs_on | d }}</dd>
+          <dt>Возвращение</dt>
+          <dd>{{ trip.returns_on | d }}{% if trip.is_overdue %} — срок прошёл{% endif %}</dd>
+          <dt>Закрыта</dt><dd>{{ trip.closed_at | dt }}</dd>
+          <dt>Заметки</dt><dd>{{ trip.notes or '—' }}</dd>
+        </dl>
+        {% if trip.is_open and away %}
+          <div class="note">
+            Пока в поездке {{ away | length }} ед. Командировка не закроется, пока по каждой
+            не отмечено: вернулась, оставлена на месте или списана.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if user.role == UserRole.ADMIN and not lines %}
+    <section class="card">
+      <div class="card__head"><h2>Удаление</h2></div>
+      <div class="card__body">
+        <p class="hint">С этой командировкой ничего не ездило — её можно удалить без следа.</p>
+        <form method="post" action="/trips/{{ trip.id }}/delete">
+          <button class="btn btn--danger" type="submit">Удалить командировку</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block after %}
+{% if can_edit and trip.is_open %}
+<div class="actionbar mobile-only">
+  <a class="btn btn--primary" href="/trips/{{ trip.id }}/take">Довезти единицу</a>
+  <a class="btn btn--ghost" href="/trips/{{ trip.id }}/act">Акт</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -3,8 +3,8 @@
     python -m scripts.reset_db --admin ivanov --full-name "Иванов И. И."
 
 Для боевого старта после знакомства с демо-набором: справочники, сотрудники,
-единицы, журнал, расходники и заявки стираются, остаётся один вход, с которого
-всё заводится заново.
+единицы, журнал, расходники, заявки, проекты и командировки стираются, остаётся
+один вход, с которого всё заводится заново.
 
 Если учётка с таким логином уже есть, она сохраняется вместе с паролем —
 скрипт ничего не спрашивает и никаких паролей не показывает. Для новой
@@ -29,7 +29,9 @@ from app.models.enums import UserRole
 from app.models.item import Item, ItemAttribute, ItemType, NumberSequence
 from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.movement import Movement
+from app.models.project import Project
 from app.models.request import EquipmentRequest
+from app.models.trip import Trip
 from app.models.user import User
 
 # порядок важен: сначала то, что ссылается, потом то, на что ссылаются
@@ -43,6 +45,8 @@ WIPE_ORDER = [
     KitTemplateLine,
     KitTemplate,
     NumberSequence,
+    Trip,
+    Project,
     User,
     Employee,
     Room,

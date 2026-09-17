@@ -59,13 +59,29 @@
         </div>
       </div>
 
-      <div class="form-row">
-        <label for="status">Статус</label>
-        <select id="status" name="status">
-          {% for status, label in STATUS_LABELS.items() %}
-            <option value="{{ status.value }}" {{ 'selected' if values.status == status.value }}>{{ label }}</option>
-          {% endfor %}
-        </select>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="status">Статус</label>
+          <select id="status" name="status">
+            {% for status, label in STATUS_LABELS.items() %}
+              <option value="{{ status.value }}" {{ 'selected' if values.status == status.value }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="project_id">Принадлежность</label>
+          <select id="project_id" name="project_id">
+            <option value="">Числится на предприятии</option>
+            {% for project in projects %}
+              <option value="{{ project.id }}"
+                {{ 'selected' if values.project_id and values.project_id|string == project.id|string }}>
+                {{ project.code }} — {{ project.name }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="hint">Единица из проекта: принадлежность не меняется при перемещениях.</div>
+        </div>
       </div>
 
       {% if not item %}

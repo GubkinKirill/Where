@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'projects' %}
+{% block title %}{{ project.code }} — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <div class="crumbs"><a href="/projects">Проекты</a> / {{ project.code }}</div>
+    <h1><span class="inv">{{ project.code }}</span> · {{ project.name }}</h1>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <span class="badge badge--{{ 'in_use' if project.status == ProjectStatus.ACTIVE else ('incomplete' if project.status == ProjectStatus.SUSPENDED else 'reserve') }}">
+        {{ project.status | project_status_label }}
+      </span>
+      {% if project.customer %}<span class="type-chip">{{ project.customer }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="actions desktop-only">
+    <a class="btn" href="/items?owner={{ project.id }}">Открыть в списке единиц</a>
+    {% if user.role == UserRole.ADMIN %}
+      <a class="btn btn--ghost" href="/directories/projects/{{ project.id }}">Изменить</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cols">
+  <div>
+    <section class="card">
+      <div class="card__head">
+        <h2>Оборудование проекта — {{ summary.total }}</h2>
+      </div>
+      <div class="card__body card__body--flush">
+        {% if not summary.items %}
+          <div class="empty-state">
+            За проектом ничего не числится. Принадлежность указывается в карточке единицы,
+            поле «Принадлежность».
+          </div>
+        {% else %}
+        <div class="table-wrap">
+          <table class="list">
+            <thead>
+              <tr>
+                <th>Номер</th>
+                <th>Название</th>
+                <th>Тип</th>
+                <th>Статус</th>
+                <th>Где сейчас</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in summary.items %}
+              <tr>
+                <td><a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a></td>
+                <td>{{ item.name }}</td>
+                <td><span class="type-chip">{{ item.type.name }}</span></td>
+                <td>{{ ui.status_badge(item.status) }}</td>
+                <td>{{ ui.location_cell(item) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if trips %}
+    <section class="card">
+      <div class="card__head"><h2>Командировки по проекту</h2></div>
+      <div class="card__body card__body--flush">
+        <ul class="rows">
+          {% for trip in trips %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title">
+                <a href="/trips/{{ trip.id }}" class="inv">{{ trip.code }}</a> {{ trip.destination }}
+              </div>
+              <div class="rows__sub">
+                {{ trip.employee.short_name }} · {{ trip.departs_on | d }} — {{ trip.returns_on | d }}
+              </div>
+            </div>
+            <span class="badge badge--{{ 'in_use' if trip.is_open else 'reserve' }}">
+              {{ trip.status | trip_status_label }}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div>
+    <section class="card">
+      <div class="card__head"><h2>Где оборудование</h2></div>
+      <div class="card__body">
+        {% if summary.by_location %}
+        <dl class="kv">
+          {% for kind, count in summary.by_location.items() %}
+            <dt>{{ kind | location_kind_icon }} {{ kind | location_kind_label }}</dt>
+            <dd><a href="/items?owner={{ project.id }}&loc_kind={{ kind.value }}">{{ count }} ед.</a></dd>
+          {% endfor %}
+        </dl>
+        {% else %}
+          <p class="hint">Пока нечего показывать.</p>
+        {% endif %}
+        {% if summary.written_off %}
+          <div class="note">Списано по проекту: {{ summary.written_off }} ед.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h2>Проект</h2></div>
+      <div class="card__body">
+        <dl class="kv">
+          <dt>Код</dt><dd class="inv">{{ project.code }}</dd>
+          <dt>Заказчик</dt><dd>{{ project.customer or '—' }}</dd>
+          <dt>Начало</dt><dd>{{ project.starts_on | d }}</dd>
+          <dt>Окончание</dt><dd>{{ project.ends_on | d }}</dd>
+          <dt>Состояние</dt><dd>{{ project.status | project_status_label }}</dd>
+          <dt>Заметки</dt><dd>{{ project.notes or '—' }}</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

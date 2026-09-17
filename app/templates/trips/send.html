@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set section = 'items' %}
+{% block title %}{{ item.inv_number }} — в командировку{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/items">Единицы</a> / <a href="/items/{{ item.id }}">{{ item.inv_number }}</a> / в командировку
+</div>
+<h1 style="margin-bottom:16px">Взять в командировку</h1>
+
+<section class="card" style="max-width:640px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+    </div>
+
+    {% if not trips %}
+      <div class="empty-state">
+        Открытых командировок нет. <a href="/trips/new">Создайте командировку</a>,
+        а затем отметьте, что берут с собой.
+      </div>
+    {% else %}
+    <form method="post" action="/items/{{ item.id }}/to-trip">
+      <div class="form-row">
+        <label for="trip_id">Командировка <span class="req">*</span></label>
+        <select id="trip_id" name="trip_id" required>
+          <option value="">— выберите —</option>
+          {% for trip in trips %}
+            <option value="{{ trip.id }}">
+              {{ trip.code }} · {{ trip.destination }} · {{ trip.employee.short_name }} · выезд {{ trip.departs_on | d }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Записать в командировку</button>
+        <a class="btn" href="/items/{{ item.id }}">Отмена</a>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

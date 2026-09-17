@@ -53,15 +53,54 @@
   {% endif %}
 </div>
 
-{% if not employee.is_active and items %}
+{% if not employee.is_active and (items or away) %}
 <div class="flash flash--warn">
-  Сотрудник уволен, но за ним числится единиц: {{ items | length }}.
+  Сотрудник уволен, но за ним числится единиц: {{ items | length }}{% if away %},
+  и ещё {{ away | length }} увезено в командировку{% endif %}.
   Передайте их другому сотруднику или примите возврат на склад — техника не спишется сама.
+  {% if away %}Увезённое сначала нужно принять из командировки.{% endif %}
+</div>
+{% endif %}
+
+{% if trips %}
+<div class="flash">
+  Сотрудник в командировке:
+  {% for trip in trips %}
+    <a href="/trips/{{ trip.id }}">{{ trip.code }}</a> — {{ trip.destination }},
+    выезд {{ trip.departs_on | d }}{% if trip.returns_on %}, возвращение {{ trip.returns_on | d }}{% endif %}{% if not loop.last %}; {% endif %}
+  {% endfor %}
+  {% if away %}· увезено единиц: {{ away | length }}.{% endif %}
 </div>
 {% endif %}
 
 <div class="cols">
   <div>
+    {% if away %}
+    <section class="card">
+      <div class="card__head"><h2>Увезено в командировку — {{ away | length }}</h2></div>
+      <div class="card__body card__body--flush">
+        <ul class="rows">
+          {% for item in away %}
+          <li>
+            <div class="rows__main">
+              <div class="rows__title">
+                <a href="/items/{{ item.id }}" class="inv">{{ item.inv_number }}</a> {{ item.name }}
+              </div>
+              <div class="rows__sub">
+                {{ item.type.name }} · {{ item.trip.destination if item.trip }} · с {{ item.loc_since | d }}
+              </div>
+            </div>
+            {{ ui.status_badge(item.status) }}
+            {% if can_edit and item.trip %}
+              <a class="btn btn--sm btn--ghost" href="/trips/{{ item.trip.id }}/return/{{ item.id }}">Вернулась</a>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
     <section class="card">
       <div class="card__head"><h2>Числится за сотрудником — {{ items | length }}</h2></div>
       <div class="card__body card__body--flush">

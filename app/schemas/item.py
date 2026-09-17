@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import ClassVar, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -28,10 +28,12 @@ class ItemForm(BaseModel):
     warranty_until: Optional[date] = None
     notes: Optional[str] = None
     kit_template_id: Optional[int] = None
+    # empty means the unit is on the books of the enterprise, not of a project
+    project_id: Optional[int] = None
 
-    @field_validator("kit_template_id", mode="before")
+    @field_validator("kit_template_id", "project_id", mode="before")
     @classmethod
-    def empty_template_is_none(cls, value):
+    def empty_choice_is_none(cls, value):
         return _blank_to_none(value)
 
     @field_validator(
@@ -65,13 +67,35 @@ class ItemFilter(BaseModel):
     employee_id: Optional[int] = None
     storage_place_id: Optional[int] = None
     parent_item_id: Optional[int] = None
+    trip_id: Optional[int] = None
+    # belonging, as one select: «company» for the enterprise itself, or a project id
+    owner: Optional[str] = None
     include_written_off: bool = False
     limit: int = 300
+
+    COMPANY: ClassVar[str] = "company"
 
     @field_validator("q", mode="before")
     @classmethod
     def clean_query(cls, value):
         return _blank_to_none(value)
+
+    @field_validator("owner", mode="before")
+    @classmethod
+    def clean_owner(cls, value):
+        value = _blank_to_none(value)
+        if value is None:
+            return None
+        value = str(value)
+        return value if value == "company" or value.isdigit() else None
+
+    @property
+    def is_company_owned(self) -> bool:
+        return self.owner == self.COMPANY
+
+    @property
+    def owner_project_id(self) -> Optional[int]:
+        return int(self.owner) if self.owner and self.owner.isdigit() else None
 
     @field_validator(
         "type_id",
@@ -80,6 +104,7 @@ class ItemFilter(BaseModel):
         "employee_id",
         "storage_place_id",
         "parent_item_id",
+        "trip_id",
         "status",
         "loc_kind",
         mode="before",
@@ -101,6 +126,8 @@ class ItemFilter(BaseModel):
                 self.employee_id,
                 self.storage_place_id,
                 self.parent_item_id,
+                self.trip_id,
+                self.owner,
                 self.include_written_off,
             ]
         )

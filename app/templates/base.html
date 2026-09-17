@@ -15,9 +15,11 @@
     <a class="brand {{ 'is-active' if section == 'dashboard' }}" href="/">Учёт техники</a>
     <nav class="nav">
       {% if user.is_staff %}
+        {# пять ежедневных разделов: полоса должна остаться в одну строку,
+           остальное живёт в «Ещё» #}
         <a href="/items" class="{{ 'is-active' if section == 'items' }}">Единицы</a>
-        <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
         <a href="/storage" class="{{ 'is-active' if section == 'storage' }}">Склад</a>
+        <a href="/trips" class="{{ 'is-active' if section == 'trips' }}">Командировки</a>
         <a href="/directories/employees" class="{{ 'is-active' if section == 'employees' }}">Сотрудники</a>
         <a href="/movements" class="{{ 'is-active' if section == 'movements' }}">Перемещения</a>
       {% else %}
@@ -30,9 +32,17 @@
     </nav>
     {% if user.is_staff %}
     <details class="menu">
-      <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users') }}">Ещё</summary>
+      <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users', 'kits', 'projects', 'requests') }}">Ещё</summary>
       <div class="menu__list">
+        <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
+        <a href="/projects" class="{{ 'is-active' if section == 'projects' }}">Проекты</a>
+        <a href="/consumables">Расходники</a>
+        <a href="/requests" class="{{ 'is-active' if section == 'requests' }}">Заявки</a>
+        <span class="menu__sep"></span>
         <a href="/reports/unconfirmed">Не подтверждено</a>
+        <a href="/reports/overdue">Просрочен возврат</a>
+        <a href="/reports/low-stock">Заканчивается</a>
+        <span class="menu__sep"></span>
         <a href="/directories">Справочники</a>
         {% if user.role == UserRole.ADMIN %}
           <a href="/admin/users">Учётки</a>

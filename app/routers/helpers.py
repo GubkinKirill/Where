@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any, Optional
 
 from sqlalchemy import select
@@ -7,7 +8,9 @@ from app.models.directory import Department, Employee, Room, StoragePlace
 from app.models.enums import LocationKind
 from app.models.item import Item, ItemType
 from app.models.kit import KitTemplate
-from app.services.errors import MoveError
+from app.services import projects as projects_service
+from app.services import trips as trips_service
+from app.services.errors import MoveError, ServiceError
 from app.services.location import LocationRef
 
 
@@ -18,6 +21,17 @@ def int_or_none(value: Any) -> Optional[int]:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def date_or_none(value: Any) -> Optional[date]:
+    """An empty date field means «not set»; a broken one is worth complaining about."""
+    value = (value or "").strip() if isinstance(value, str) else value
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError as exc:
+        raise ServiceError("Некорректная дата.") from exc
 
 
 def location_from_form(db: Session, form) -> LocationRef:
@@ -36,6 +50,8 @@ def location_from_form(db: Session, form) -> LocationRef:
         return LocationRef.storage(int_or_none(form.get("storage_place_id")))
     if kind is LocationKind.ROOM:
         return LocationRef.room(int_or_none(form.get("room_id")))
+    if kind is LocationKind.TRIP:
+        return LocationRef.trip(int_or_none(form.get("trip_id")))
     if kind is LocationKind.EXTERNAL:
         return LocationRef.external((form.get("external_note") or "").strip())
     if kind is LocationKind.WRITTEN_OFF:
@@ -80,4 +96,6 @@ def form_choices(db: Session) -> dict[str, Any]:
         "kit_templates": list(
             db.scalars(select(KitTemplate).where(KitTemplate.is_active).order_by(KitTemplate.name))
         ),
+        "projects": projects_service.list_projects(db),
+        "open_trips": trips_service.open_trips(db),
     }

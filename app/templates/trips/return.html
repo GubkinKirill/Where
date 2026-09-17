@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set section = 'trips' %}
+{% set allowed_kinds = [LocationKind.STORAGE, LocationKind.PERSON, LocationKind.ROOM] %}
+{% block title %}Возврат из командировки — {{ item.inv_number }}{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/trips">Командировки</a> / <a href="/trips/{{ trip.id }}">{{ trip.code }}</a> / возврат
+</div>
+<h1 style="margin-bottom:16px">Единица вернулась</h1>
+
+<section class="card" style="max-width:640px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }} — приехала из «{{ trip.destination }}» с {{ trip.employee.short_name }}.</span>
+    </div>
+
+    <form method="post" action="/trips/{{ trip.id }}/return/{{ item.id }}">
+      {% include "partials/_placement_fields.html" %}
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="returned_on">Дата возврата</label>
+          <input type="date" id="returned_on" name="returned_on">
+          <div class="hint">Если пусто — сегодня. Заполните, если принимаете задним числом.</div>
+        </div>
+        <div class="form-row">
+          <label for="comment">Комментарий</label>
+          <input type="text" id="comment" name="comment" placeholder="Состояние после поездки">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Принять</button>
+        <a class="btn" href="/trips/{{ trip.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

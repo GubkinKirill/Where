@@ -17,10 +17,12 @@ from app.routers import (
     items,
     kits,
     movements,
+    projects,
     reports,
     requests as requests_router,
     self_service,
     storage,
+    trips,
     users,
 )
 from app.templating import render
@@ -34,6 +36,8 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(items.router)
 app.include_router(movements.router)
+app.include_router(trips.router)
+app.include_router(projects.router)
 app.include_router(employees.router)
 app.include_router(kits.router)
 app.include_router(consumables.router)

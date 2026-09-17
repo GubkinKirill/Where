@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% set section = 'projects' %}
+{% block title %}Проекты — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Проекты</h1>
+    <div class="crumbs">
+      Числится за предприятием: {{ company_count }} ед. · пришло из проектов: {{ project_count }} ед.
+    </div>
+  </div>
+  <div class="actions">
+    {% if user.role == UserRole.ADMIN %}
+      <a class="btn btn--primary" href="/directories/projects/new">Добавить проект</a>
+    {% endif %}
+    <a class="btn btn--ghost" href="/items?owner=company">Оборудование предприятия</a>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not projects %}
+      <div class="empty-state">
+        Проектов пока нет. Заводятся в справочнике: «Ещё» → «Справочники» → «Проекты».
+      </div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Код</th>
+            <th>Название</th>
+            <th>Заказчик</th>
+            <th>Сроки</th>
+            <th>Оборудование</th>
+            <th>Состояние</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr>
+            <td><a href="/projects/{{ project.id }}" class="inv">{{ project.code }}</a></td>
+            <td>{{ project.name }}</td>
+            <td>{{ project.customer or '—' }}</td>
+            <td>{{ project.starts_on | d }} — {{ project.ends_on | d }}</td>
+            <td>
+              {% set count = counts.get(project.id, 0) %}
+              {% if count %}
+                <a href="/items?owner={{ project.id }}">{{ count }} ед.</a>
+              {% else %}
+                <span class="nested-mark">нет</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge--{{ 'in_use' if project.status == ProjectStatus.ACTIVE else ('incomplete' if project.status == ProjectStatus.SUSPENDED else 'reserve') }}">
+                {{ project.status | project_status_label }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -9,6 +9,7 @@ from app.services import consumables as consumables_service
 from app.services import employees as employees_service
 from app.services import movements as movements_service
 from app.services import requests as requests_service
+from app.services import trips as trips_service
 from app.services import users as users_service
 from app.services.errors import ServiceError
 from app.templating import redirect, render
@@ -34,6 +35,8 @@ def employee_card(employee_id: int, request: Request, db: DbSession, user: Viewe
                 item.id: movements_service.open_issue(db, item) for item in held
             },
             "account": users_service.account_of(db, employee),
+            "trips": trips_service.open_trips_of(db, employee),
+            "away": trips_service.items_away_with(db, employee),
             "consumables": consumables_service.issued_to(db, employee, limit=10),
             "requests": requests_service.of_employee(db, employee)[:5],
             "colleagues": list(

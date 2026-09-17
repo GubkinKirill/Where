@@ -6,9 +6,11 @@ from app.models.enums import (
     ItemStatus,
     LocationKind,
     MovementReason,
+    ProjectStatus,
     RequestKind,
     RequestStatus,
     StoragePlaceKind,
+    TripStatus,
     UserRole,
 )
 
@@ -26,6 +28,7 @@ LOCATION_KIND_LABELS = {
     LocationKind.STORAGE: "На складе",
     LocationKind.PERSON: "У сотрудника",
     LocationKind.ROOM: "В кабинете",
+    LocationKind.TRIP: "В командировке",
     LocationKind.EXTERNAL: "Передано за пределы отдела",
     LocationKind.WRITTEN_OFF: "Списано",
 }
@@ -35,6 +38,7 @@ LOCATION_KIND_ICONS = {
     LocationKind.STORAGE: "🗄",
     LocationKind.PERSON: "👤",
     LocationKind.ROOM: "🚪",
+    LocationKind.TRIP: "🧳",
     LocationKind.EXTERNAL: "↗",
     LocationKind.WRITTEN_OFF: "✕",
 }
@@ -45,6 +49,7 @@ LOCATION_SNAPSHOT_TEMPLATES = {
     LocationKind.STORAGE: "склад · {target}",
     LocationKind.PERSON: "{target}",
     LocationKind.ROOM: "кабинет {target}",
+    LocationKind.TRIP: "командировка · {target}",
     LocationKind.EXTERNAL: "передано: {target}",
     LocationKind.WRITTEN_OFF: "списано",
 }
@@ -57,6 +62,9 @@ MOVEMENT_REASON_LABELS = {
     MovementReason.UNINSTALL: "Изъятие из состава",
     MovementReason.TO_STORAGE: "Перемещение на склад",
     MovementReason.TRANSFER_OUT: "Передача в другой отдел",
+    MovementReason.TRIP_OUT: "Взято в командировку",
+    MovementReason.TRIP_RETURN: "Возврат из командировки",
+    MovementReason.TRIP_LEFT: "Оставлено на месте командировки",
     MovementReason.REPAIR: "Ремонт",
     MovementReason.WRITE_OFF: "Списание",
 }
@@ -102,6 +110,25 @@ STORAGE_KIND_LABELS = {
     StoragePlaceKind.ROOM: "Помещение",
 }
 
+PROJECT_STATUS_LABELS = {
+    ProjectStatus.ACTIVE: "Идёт",
+    ProjectStatus.SUSPENDED: "Приостановлен",
+    ProjectStatus.CLOSED: "Закрыт",
+}
+
+TRIP_STATUS_LABELS = {
+    TripStatus.OPEN: "Открыта",
+    TripStatus.CLOSED: "Закрыта",
+}
+
+# what happened to a unit that left with a trip; drawn in the trip card
+TRIP_OUTCOME_LABELS = {
+    "away": "в командировке",
+    "returned": "вернулась",
+    "left": "оставлена на месте",
+    "written_off": "списана там",
+}
+
 
 def status_label(value: ItemStatus | str) -> str:
     return STATUS_LABELS.get(ItemStatus(value), str(value))
@@ -141,3 +168,15 @@ def consumable_reason_label(value: ConsumableReason | str) -> str:
 
 def storage_kind_label(value: StoragePlaceKind | str) -> str:
     return STORAGE_KIND_LABELS.get(StoragePlaceKind(value), str(value))
+
+
+def project_status_label(value: ProjectStatus | str) -> str:
+    return PROJECT_STATUS_LABELS.get(ProjectStatus(value), str(value))
+
+
+def trip_status_label(value: TripStatus | str) -> str:
+    return TRIP_STATUS_LABELS.get(TripStatus(value), str(value))
+
+
+def trip_outcome_label(value: str) -> str:
+    return TRIP_OUTCOME_LABELS.get(value, value)

@@ -68,6 +68,35 @@
 
   <section class="card">
     <div class="card__head">
+      <h2>Открытые командировки</h2>
+      <a href="/trips">все поездки</a>
+    </div>
+    <div class="card__body card__body--flush">
+      {% if not trips %}
+        <div class="empty-state">Открытых командировок нет.</div>
+      {% else %}
+      <ul class="rows">
+        {% for trip in trips[:6] %}
+        <li>
+          <div class="rows__main">
+            <div class="rows__title">
+              <a href="/trips/{{ trip.id }}" class="inv">{{ trip.code }}</a> {{ trip.destination }}
+            </div>
+            <div class="rows__sub">
+              {{ trip.employee.short_name }} · выезд {{ trip.departs_on | d }}
+              {%- if trip.returns_on %} · назад {{ trip.returns_on | d }}{% endif %}
+            </div>
+          </div>
+          {% if trip.is_overdue %}<span class="badge badge--incomplete">срок прошёл</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
       <h2>Последние перемещения</h2>
       <a href="/movements">журнал</a>
     </div>

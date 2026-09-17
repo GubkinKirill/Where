@@ -44,7 +44,7 @@
         {% else %}
           <div class="form-row">
             <label for="{{ field.name }}">{{ field.label }}{% if field.required %} <span class="req">*</span>{% endif %}</label>
-            <input type="{{ 'number' if field.kind == 'number' else 'text' }}"
+            <input type="{{ 'number' if field.kind == 'number' else ('date' if field.kind == 'date' else 'text') }}"
                    id="{{ field.name }}" name="{{ field.name }}" value="{{ value }}"
                    {{ 'required' if field.required }}>
             {% if field.hint %}<div class="hint">{{ field.hint }}</div>{% endif %}

@@ -17,6 +17,7 @@
   <div class="card__body">
     <h2 class="sheet__title">{{ title }}</h2>
     <div class="sheet__date">от {{ issued_at | d }}</div>
+    {% if subtitle %}<div class="sheet__date">{{ subtitle }}</div>{% endif %}
 
     <dl class="kv sheet__head">
       <dt>Сотрудник</dt><dd>{{ employee.full_name }}</dd>

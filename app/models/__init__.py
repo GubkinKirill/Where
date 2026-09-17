@@ -6,15 +6,19 @@ from app.models.enums import (
     ItemStatus,
     LocationKind,
     MovementReason,
+    ProjectStatus,
     RequestKind,
     RequestStatus,
     StoragePlaceKind,
+    TripStatus,
     UserRole,
 )
 from app.models.item import Item, ItemAttribute, ItemType, NumberSequence
 from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.movement import Movement
+from app.models.project import Project
 from app.models.request import EquipmentRequest
+from app.models.trip import Trip
 from app.models.user import User
 
 __all__ = [
@@ -35,11 +39,15 @@ __all__ = [
     "Movement",
     "MovementReason",
     "NumberSequence",
+    "Project",
+    "ProjectStatus",
     "RequestKind",
     "RequestStatus",
     "Room",
     "StoragePlace",
     "StoragePlaceKind",
+    "Trip",
+    "TripStatus",
     "User",
     "UserRole",
 ]

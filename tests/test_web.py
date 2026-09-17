@@ -1,5 +1,7 @@
 """End to end through HTTP: sign in, look at a card, hand an item over."""
 
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -156,3 +158,20 @@ def test_the_summary_offers_no_new_item_button_to_a_viewer(client, db, types, sh
     sign_in(client, "viewer")
 
     assert "/items/new" not in client.get("/dashboard").text
+
+
+def test_the_section_bar_stays_one_line(client, db, editor, types, shelf):
+    """Шапка не должна становиться двухэтажной: полоса разделов рассчитана
+    на пять вкладок, всё остальное живёт в «Ещё»."""
+    db.commit()
+    sign_in(client, "editor")
+
+    html = client.get("/items").text
+    bar = html[html.index('<nav class="nav">') : html.index("</nav>")]
+    tabs = re.findall(r">([^<>]+)</a>", bar)
+
+    assert len(tabs) <= 5, f"вкладок стало {len(tabs)}: {tabs}"
+    assert "Командировки" in "".join(tabs)
+
+    menu = html[html.index("menu__list") : html.index("</details>")]
+    assert "Проекты" in menu and "Комплекты" in menu

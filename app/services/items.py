@@ -107,8 +107,14 @@ def search_items(db: Session, filters: ItemFilter) -> list[Item]:
         stmt = stmt.where(Item.loc_storage_place_id == filters.storage_place_id)
     if filters.parent_item_id:
         stmt = stmt.where(Item.loc_parent_item_id == filters.parent_item_id)
+    if filters.trip_id:
+        stmt = stmt.where(Item.loc_trip_id == filters.trip_id)
     if filters.department_id:
         stmt = stmt.where(Employee.department_id == filters.department_id)
+    if filters.is_company_owned:
+        stmt = stmt.where(Item.project_id.is_(None))
+    elif filters.owner_project_id:
+        stmt = stmt.where(Item.project_id == filters.owner_project_id)
     if not filters.include_written_off and filters.status is not ItemStatus.WRITTEN_OFF:
         stmt = stmt.where(Item.status != ItemStatus.WRITTEN_OFF)
 
@@ -156,6 +162,7 @@ def _apply_form(item: Item, form: ItemForm) -> None:
     item.warranty_until = form.warranty_until
     item.notes = form.notes
     item.kit_template_id = form.kit_template_id
+    item.project_id = form.project_id
 
 
 def _apply_attributes(item: Item, attributes: Optional[dict[str, str]]) -> None:

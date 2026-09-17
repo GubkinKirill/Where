@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set section = 'trips' %}
+{% block title %}Оставлено на месте — {{ item.inv_number }}{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/trips">Командировки</a> / <a href="/trips/{{ trip.id }}">{{ trip.code }}</a> / оставлено
+</div>
+<h1 style="margin-bottom:16px">Единица осталась на месте</h1>
+
+<section class="card" style="max-width:640px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }} — остаётся в «{{ trip.destination }}» и назад не едет.</span>
+    </div>
+
+    <p class="hint">
+      Единица останется на учёте: её размещение станет «передано за пределы отдела»
+      с пометкой о командировке. Если она там и списывается, спишите её на карточке единицы.
+    </p>
+
+    <form method="post" action="/trips/{{ trip.id }}/leave/{{ item.id }}">
+      <div class="form-row">
+        <label for="note">Где именно осталась</label>
+        <input type="text" id="note" name="note" value="{{ trip.destination }}"
+               placeholder="Площадка «Север», у бригадира Сидорова">
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment" placeholder="Кому передано и по какому документу">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Отметить оставленной</button>
+        <a class="btn" href="/trips/{{ trip.id }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

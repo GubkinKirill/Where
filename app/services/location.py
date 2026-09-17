@@ -7,6 +7,7 @@ from app.i18n import LOCATION_SNAPSHOT_TEMPLATES
 from app.models.directory import Employee, Room, StoragePlace
 from app.models.enums import LocationKind
 from app.models.item import Item
+from app.models.trip import Trip
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,7 @@ class LocationRef:
     storage_place_id: Optional[int] = None
     employee_id: Optional[int] = None
     room_id: Optional[int] = None
+    trip_id: Optional[int] = None
     external_note: Optional[str] = None
 
     @classmethod
@@ -37,6 +39,10 @@ class LocationRef:
         return cls(LocationKind.ROOM, room_id=room_id)
 
     @classmethod
+    def trip(cls, trip_id: int) -> "LocationRef":
+        return cls(LocationKind.TRIP, trip_id=trip_id)
+
+    @classmethod
     def external(cls, note: str) -> "LocationRef":
         return cls(LocationKind.EXTERNAL, external_note=note)
 
@@ -52,6 +58,7 @@ class LocationRef:
             storage_place_id=item.loc_storage_place_id,
             employee_id=item.loc_employee_id,
             room_id=item.loc_room_id,
+            trip_id=item.loc_trip_id,
             external_note=item.loc_external_note,
         )
 
@@ -77,6 +84,9 @@ def describe_location(db: Session, ref: LocationRef) -> str:
     elif ref.kind is LocationKind.ROOM:
         room = db.get(Room, ref.room_id)
         target = room.number if room else "?"
+    elif ref.kind is LocationKind.TRIP:
+        trip = db.get(Trip, ref.trip_id)
+        target = f"{trip.destination}, {trip.employee.short_name}" if trip else "?"
     elif ref.kind is LocationKind.EXTERNAL:
         target = ref.external_note or "?"
 

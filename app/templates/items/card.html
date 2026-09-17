@@ -24,10 +24,16 @@
 
   {% if can_edit %}
   <div class="actions desktop-only">
-    {% if item.loc_kind == LocationKind.PERSON %}
+    {% if item.loc_kind == LocationKind.TRIP %}
+      <a class="btn btn--primary" href="/trips/{{ item.loc_trip_id }}/return/{{ item.id }}">Принять из командировки</a>
+      <a class="btn" href="/trips/{{ item.loc_trip_id }}/leave/{{ item.id }}">Оставить на месте</a>
+    {% elif item.loc_kind == LocationKind.PERSON %}
       <a class="btn btn--primary" href="/items/{{ item.id }}/return">Принять возврат</a>
     {% else %}
       <a class="btn btn--primary" href="/items/{{ item.id }}/issue">Выдать</a>
+    {% endif %}
+    {% if item.loc_kind not in (LocationKind.TRIP, LocationKind.INSIDE) %}
+      <a class="btn" href="/items/{{ item.id }}/to-trip">В командировку</a>
     {% endif %}
     <a class="btn" href="/items/{{ item.id }}/move">Переместить</a>
     {% if item.loc_kind == LocationKind.INSIDE %}
@@ -59,6 +65,14 @@
           <dt>Инвентарный номер</dt><dd class="inv">{{ item.inv_number }}</dd>
           <dt>Прежний номер</dt><dd>{{ item.legacy_number or '—' }}</dd>
           <dt>Тип</dt><dd>{{ item.type.name }} ({{ item.type.code }})</dd>
+          <dt>Принадлежность</dt>
+          <dd>
+            {% if item.project %}
+              <a href="/projects/{{ item.project.id }}">{{ item.project.code }} — {{ item.project.name }}</a>
+            {% else %}
+              числится на предприятии
+            {% endif %}
+          </dd>
           <dt>Производитель, модель</dt>
           <dd>{% if item.manufacturer or item.model %}{{ item.manufacturer or '' }} {{ item.model or '' }}{% else %}—{% endif %}</dd>
           <dt>Серийный номер</dt><dd class="inv">{{ item.serial_number or '—' }}</dd>
@@ -196,6 +210,17 @@
             <div class="placement__sub">Здесь с {{ item.loc_since | d }} — {{ item.loc_since | since }}</div>
           </div>
         </div>
+        {% if item.loc_kind == LocationKind.TRIP and item.trip %}
+          <div class="note">
+            Командировка <a href="/trips/{{ item.trip.id }}">{{ item.trip.code }}</a>:
+            {{ item.trip.employee.short_name }}, {{ item.trip.destination }}, выезд {{ item.trip.departs_on | d }}.
+            {% if item.trip.returns_on %}
+              Возвращение {{ item.trip.returns_on | d }}{% if item.trip.is_overdue %} — срок прошёл{% endif %}.
+            {% else %}
+              Дата возвращения не указана.
+            {% endif %}
+          </div>
+        {% endif %}
         {% if open_issue %}
           {% if open_issue.expected_return_date %}
             <div class="note">
@@ -241,7 +266,10 @@
 {% block after %}
 {% if can_edit %}
 <div class="actionbar mobile-only">
-  {% if item.loc_kind == LocationKind.PERSON %}
+  {% if item.loc_kind == LocationKind.TRIP %}
+    <a class="btn btn--primary" href="/trips/{{ item.loc_trip_id }}/return/{{ item.id }}">Принять из командировки</a>
+    <a class="btn" href="/trips/{{ item.loc_trip_id }}/leave/{{ item.id }}">Оставить там</a>
+  {% elif item.loc_kind == LocationKind.PERSON %}
     <a class="btn btn--primary" href="/items/{{ item.id }}/return">Принять возврат</a>
   {% else %}
     <a class="btn btn--primary" href="/items/{{ item.id }}/issue">Выдать</a>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% set section = 'trips' %}
+{% block title %}Командировки — Учёт техники{% endblock %}
+
+{% block content %}
+<div class="page__head">
+  <div>
+    <h1>Командировки</h1>
+    <div class="crumbs">Сейчас в поездках единиц: {{ away_total }}</div>
+  </div>
+  <div class="actions">
+    {% if user.can(UserRole.EDITOR) %}
+      <a class="btn btn--primary" href="/trips/new">Новая командировка</a>
+    {% endif %}
+    <a class="btn btn--ghost" href="/trips{{ '' if include_closed else '?closed=1' }}">
+      {{ 'Только открытые' if include_closed else 'Показать закрытые' }}
+    </a>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card__body card__body--flush">
+    {% if not trips %}
+      <div class="empty-state">
+        {% if include_closed %}Командировок пока нет.{% else %}Открытых командировок нет.{% endif %}
+      </div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Код</th>
+            <th>Кто едет</th>
+            <th>Куда</th>
+            <th>Сроки</th>
+            <th>С собой</th>
+            <th>Состояние</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for trip in trips %}
+          <tr>
+            <td><a href="/trips/{{ trip.id }}" class="inv">{{ trip.code }}</a></td>
+            <td>
+              <a href="/employees/{{ trip.employee_id }}">{{ trip.employee.short_name }}</a>
+              {% if trip.project %}
+                <div class="nested-mark">проект <a href="/projects/{{ trip.project.id }}">{{ trip.project.code }}</a></div>
+              {% endif %}
+            </td>
+            <td>
+              {{ trip.destination }}
+              {% if trip.purpose %}<div class="nested-mark">{{ trip.purpose }}</div>{% endif %}
+            </td>
+            <td>
+              {{ trip.departs_on | d }} — {{ trip.returns_on | d }}
+              {% if trip.is_overdue %}<div class="nested-mark">срок прошёл</div>{% endif %}
+            </td>
+            <td>{{ counts[trip.id] }}</td>
+            <td>
+              {% if trip.is_open %}
+                <span class="badge badge--{{ 'incomplete' if trip.is_overdue else 'in_use' }}">
+                  {{ 'Просрочена' if trip.is_overdue else 'Открыта' }}
+                </span>
+              {% else %}
+                <span class="badge badge--reserve">Закрыта</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

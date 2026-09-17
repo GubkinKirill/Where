@@ -1,17 +1,35 @@
 {# Placement chooser. Only the fields of the selected kind are enabled, so the
    form never submits a stale target from a hidden block. #}
 {% set current_kind = current_kind or LocationKind.STORAGE %}
+{# a form may narrow the choice: returning from a trip, for instance, has three ways #}
+{% set offered = allowed_kinds or LOCATION_KIND_LABELS.keys()
+     | reject('eq', LocationKind.WRITTEN_OFF) | list %}
 
 <div class="form-row">
   <label for="loc_kind">Вид размещения <span class="req">*</span></label>
   <select id="loc_kind" name="loc_kind" onchange="toggleLocationFields(this.value)">
-    {% for kind, label in LOCATION_KIND_LABELS.items() %}
-      {% if kind != LocationKind.WRITTEN_OFF %}
-        <option value="{{ kind.value }}" {{ 'selected' if current_kind == kind }}>{{ label }}</option>
+    {% for kind in offered %}
+      {% if not (kind == LocationKind.TRIP and not open_trips) %}
+        <option value="{{ kind.value }}" {{ 'selected' if current_kind == kind }}>
+          {{ LOCATION_KIND_LABELS[kind] }}
+        </option>
       {% endif %}
     {% endfor %}
   </select>
 </div>
+
+{% if open_trips %}
+<div class="form-row loc-target" data-kind="trip">
+  <label for="trip_id">Командировка <span class="req">*</span></label>
+  <select id="trip_id" name="trip_id">
+    <option value="">— выберите —</option>
+    {% for trip in open_trips %}
+      <option value="{{ trip.id }}">{{ trip.code }} · {{ trip.destination }} · {{ trip.employee.short_name }}</option>
+    {% endfor %}
+  </select>
+  <div class="hint">Вложенное внутрь едет вместе с контейнером и отдельно не перемещается.</div>
+</div>
+{% endif %}
 
 <div class="form-row loc-target" data-kind="storage">
   <label for="storage_place_id">Место хранения <span class="req">*</span></label>

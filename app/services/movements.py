@@ -15,6 +15,7 @@ from app.models.directory import Employee, Room, StoragePlace
 from app.models.enums import ItemStatus, LocationKind, MovementReason
 from app.models.item import Item
 from app.models.movement import Movement
+from app.models.trip import Trip
 from app.models.user import User
 from app.services import tree
 from app.services.errors import MoveError
@@ -60,10 +61,13 @@ def move_item(
         comment=comment,
         moved_at=moved_at,
     )
-    db.add(movement)
-
-    if reason is MovementReason.RETURN:
+    # the moment a thing leaves a person it is no longer out on their handover —
+    # whether it came back, went to somebody else or left with a trip. Leaving the
+    # record open would keep it in «not confirmed» and «overdue» for ever. Closed
+    # before the new record joins the session, so a handover cannot close itself.
+    if origin.kind is LocationKind.PERSON:
         _close_open_issue(db, item, movement.moved_at)
+    db.add(movement)
 
     with location_write(db):
         _apply(item, to)
@@ -345,6 +349,20 @@ def _validate(db: Session, item: Item, ref: LocationRef) -> None:
         if db.get(Room, ref.room_id) is None:
             raise MoveError("Кабинет не найден.")
 
+    elif ref.kind is LocationKind.TRIP:
+        trip = db.get(Trip, ref.trip_id) if ref.trip_id else None
+        if trip is None:
+            raise MoveError("Командировка не найдена.")
+        if not trip.is_open:
+            raise MoveError(
+                f"Командировка {trip.code} закрыта. Довезти в неё ничего нельзя."
+            )
+        if item.loc_kind is LocationKind.INSIDE:
+            raise MoveError(
+                f"Единица {item.inv_number} вложена в другую и едет вместе с ней. "
+                "Возьмите в командировку контейнер или сначала изымите её из состава."
+            )
+
     elif ref.kind is LocationKind.EXTERNAL:
         if not (ref.external_note or "").strip():
             raise MoveError("Укажите, куда и кому передана единица.")
@@ -361,6 +379,7 @@ def _apply(item: Item, ref: LocationRef) -> None:
     )
     item.loc_employee_id = ref.employee_id if ref.kind is LocationKind.PERSON else None
     item.loc_room_id = room_id
+    item.loc_trip_id = ref.trip_id if ref.kind is LocationKind.TRIP else None
     item.loc_external_note = ref.external_note if ref.kind is LocationKind.EXTERNAL else None
     item.loc_since = now()
 
@@ -391,6 +410,7 @@ def _build_movement(
         to_storage_place_id=target.storage_place_id,
         to_employee_id=target.employee_id,
         to_room_id=target.room_id,
+        to_trip_id=target.trip_id,
         to_external_note=target.external_note,
         to_label=describe_location(db, target),
     )
@@ -400,6 +420,7 @@ def _build_movement(
         movement.from_storage_place_id = origin.storage_place_id
         movement.from_employee_id = origin.employee_id
         movement.from_room_id = origin.room_id
+        movement.from_trip_id = origin.trip_id
         movement.from_external_note = origin.external_note
         movement.from_label = describe_location(db, origin)
     return movement

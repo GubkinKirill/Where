@@ -58,7 +58,10 @@ h2 { font-size: 15px; }
 
 .nav {
   display: flex;
-  flex-wrap: wrap;
+  /* никогда не переносим: шапка в два этажа съедает экран и сбивает прицел.
+     Если разделов станет больше, чем влезает, полоса прокручивается вбок */
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 4px;
   flex: 1;
   min-width: 0;
@@ -121,6 +124,8 @@ h2 { font-size: 15px; }
   white-space: nowrap;
 }
 .menu__list a:hover { background: rgba(255, 255, 255, .08); color: #fff; text-decoration: none; }
+.menu__list a.is-active { background: rgba(255, 255, 255, .14); color: #fff; }
+.menu__sep { height: 1px; background: #3a424e; margin: 5px 4px; }
 
 .page {
   max-width: 1180px;
@@ -448,8 +453,6 @@ table.list tbody tr:hover { background: #fafbfc; }
 
   .desktop-only { display: none; }
   .mobile-only { display: block; }
-
-  .nav { flex-wrap: nowrap; overflow-x: auto; }
 
   /* залипающая панель действий — главный сценарий: телефон у шкафа */
   .actionbar {

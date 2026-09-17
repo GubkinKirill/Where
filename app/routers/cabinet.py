@@ -24,6 +24,7 @@ from app.services import items as items_service
 from app.services import movements as movements_service
 from app.services import requests as requests_service
 from app.services import tree
+from app.services import trips as trips_service
 from app.services.errors import ServiceError
 from app.templating import redirect, render
 
@@ -46,6 +47,8 @@ def cabinet(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
             "pending": movements_service.pending_acknowledgements(db, employee),
             "requests": requests_service.open_of(db, employee),
             "consumables": consumables_service.issued_to(db, employee, limit=10),
+            "trips": trips_service.open_trips_of(db, employee),
+            "away": trips_service.items_away_with(db, employee),
         },
     )
 

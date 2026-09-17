@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set section = 'trips' %}
+{% block title %}{{ 'Новая командировка' if not trip else trip.code ~ ' — изменение' }}{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+  <a href="/trips">Командировки</a> /
+  {% if trip %}<a href="/trips/{{ trip.id }}">{{ trip.code }}</a> / изменение{% else %}новая{% endif %}
+</div>
+<h1 style="margin-bottom:16px">{{ 'Изменить командировку' if trip else 'Новая командировка' }}</h1>
+
+<section class="card" style="max-width:640px">
+  <div class="card__body">
+    <form method="post" action="{{ '/trips/' ~ trip.id ~ '/edit' if trip else '/trips/new' }}">
+
+      <div class="form-row">
+        <label for="employee_id">Кто едет <span class="req">*</span></label>
+        {% if trip %}
+          <div class="subject">
+            <span>{{ trip.employee.short_name }}</span>
+            <span>Сотрудника поездки не меняют: техника уже записана на эту поездку.</span>
+          </div>
+        {% else %}
+          <select id="employee_id" name="employee_id" required>
+            <option value="">— выберите —</option>
+            {% for employee in employees %}
+              <option value="{{ employee.id }}" {{ 'selected' if values.employee_id|string == employee.id|string }}>
+                {{ employee.short_name }}{% if employee.position %} · {{ employee.position }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        {% endif %}
+      </div>
+
+      <div class="form-row">
+        <label for="destination">Куда <span class="req">*</span></label>
+        <input type="text" id="destination" name="destination" required
+               value="{{ values.destination or '' }}" placeholder="Новосибирск, площадка «Север»">
+      </div>
+
+      <div class="form-row">
+        <label for="purpose">Зачем</label>
+        <input type="text" id="purpose" name="purpose" value="{{ values.purpose or '' }}"
+               placeholder="Монтаж базовой станции">
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="departs_on">Выезд <span class="req">*</span></label>
+          <input type="date" id="departs_on" name="departs_on" required value="{{ values.departs_on or '' }}">
+        </div>
+        <div class="form-row">
+          <label for="returns_on">Возвращение</label>
+          <input type="date" id="returns_on" name="returns_on" value="{{ values.returns_on or '' }}">
+          <div class="hint">Если пусто — срок не контролируется.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="project_id">Проект</label>
+        <select id="project_id" name="project_id">
+          <option value="">— не по проекту —</option>
+          {% for project in projects %}
+            <option value="{{ project.id }}" {{ 'selected' if values.project_id|string == project.id|string }}>
+              {{ project.code }} — {{ project.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="notes">Заметки</label>
+        <textarea id="notes" name="notes" rows="2">{{ values.notes or '' }}</textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">{{ 'Сохранить' if trip else 'Создать' }}</button>
+        <a class="btn" href="{{ '/trips/' ~ trip.id if trip else '/trips' }}">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

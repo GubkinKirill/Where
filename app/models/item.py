@@ -7,6 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, enum_column, now
 from app.models.directory import Employee, Room, StoragePlace
 from app.models.enums import ItemStatus, LocationKind
+from app.models.project import Project
+from app.models.trip import Trip
 
 # Location cache columns on Item. Written only by services.movements.move_item(),
 # which is enforced by the guard in services/location_guard.py.
@@ -16,6 +18,7 @@ LOCATION_COLUMNS = (
     "loc_storage_place_id",
     "loc_employee_id",
     "loc_room_id",
+    "loc_trip_id",
     "loc_external_note",
     "loc_since",
 )
@@ -25,22 +28,32 @@ LOCATION_COLUMNS = (
 LOCATION_SHAPE_CHECK = """
 (loc_kind = 'inside'
     AND loc_parent_item_id IS NOT NULL AND loc_storage_place_id IS NULL
-    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)
+    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NULL)
 OR (loc_kind = 'storage'
     AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NOT NULL
-    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)
+    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NULL)
 OR (loc_kind = 'person'
     AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL
-    AND loc_employee_id IS NOT NULL AND loc_external_note IS NULL)
+    AND loc_employee_id IS NOT NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NULL)
 OR (loc_kind = 'room'
     AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL
-    AND loc_employee_id IS NULL AND loc_room_id IS NOT NULL AND loc_external_note IS NULL)
+    AND loc_employee_id IS NULL AND loc_room_id IS NOT NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NULL)
+OR (loc_kind = 'trip'
+    AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL
+    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_trip_id IS NOT NULL
+    AND loc_external_note IS NULL)
 OR (loc_kind = 'external'
     AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL
-    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NOT NULL)
+    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NOT NULL)
 OR (loc_kind = 'written_off'
     AND loc_parent_item_id IS NULL AND loc_storage_place_id IS NULL
-    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_external_note IS NULL)
+    AND loc_employee_id IS NULL AND loc_room_id IS NULL AND loc_trip_id IS NULL
+    AND loc_external_note IS NULL)
 """
 
 
@@ -105,6 +118,10 @@ class Item(Base, TimestampMixin):
     kit_template_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("kit_templates.id"), default=None
     )
+    # whose the unit is: empty means it is on the books of the enterprise itself
+    project_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("projects.id"), index=True, default=None
+    )
 
     loc_kind: Mapped[LocationKind] = mapped_column(enum_column(LocationKind), index=True)
     loc_parent_item_id: Mapped[Optional[int]] = mapped_column(
@@ -119,6 +136,9 @@ class Item(Base, TimestampMixin):
     loc_room_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("rooms.id"), index=True, default=None
     )
+    loc_trip_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("trips.id"), index=True, default=None
+    )
     loc_external_note: Mapped[Optional[str]] = mapped_column(String(200), default=None)
     loc_since: Mapped[datetime] = mapped_column(default=now)
 
@@ -132,6 +152,8 @@ class Item(Base, TimestampMixin):
     storage_place: Mapped[Optional[StoragePlace]] = relationship()
     employee: Mapped[Optional[Employee]] = relationship()
     room: Mapped[Optional[Room]] = relationship()
+    trip: Mapped[Optional[Trip]] = relationship()
+    project: Mapped[Optional[Project]] = relationship(lazy="joined")
     kit_template: Mapped[Optional["KitTemplate"]] = relationship()  # noqa: F821
     attributes: Mapped[list["ItemAttribute"]] = relationship(
         back_populates="item", cascade="all, delete-orphan", order_by="ItemAttribute.key"

@@ -49,6 +49,47 @@
 </section>
 {% endif %}
 
+{% if trips %}
+<section class="card">
+  <div class="card__head">
+    <h2>Моя командировка{{ 'и' if trips | length > 1 }}</h2>
+  </div>
+  <div class="card__body card__body--flush">
+    <ul class="rows">
+      {% for trip in trips %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">{{ trip.destination }}</div>
+          <div class="rows__sub">
+            Выезд {{ trip.departs_on | d }}
+            {%- if trip.returns_on %} · возвращение {{ trip.returns_on | d }}{% endif %}
+            {%- if trip.purpose %} · {{ trip.purpose }}{% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if away %}
+    <div style="padding:10px 14px; color:var(--muted); font-size:13.5px">
+      С вами уехало единиц: {{ away | length }}. Их нужно привезти обратно или
+      сдать в отдел по возвращении.
+    </div>
+    <ul class="rows">
+      {% for item in away %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title"><span class="inv">{{ item.inv_number }}</span> {{ item.name }}</div>
+          <div class="rows__sub">{{ item.type.name }} · в поездке с {{ item.loc_since | d }}</div>
+        </div>
+        {{ ui.status_badge(item.status) }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
 {% if requests %}
 <section class="card">
   <div class="card__head">
