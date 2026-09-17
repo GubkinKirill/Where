@@ -93,8 +93,10 @@
                 {% if can_edit and trip.is_open %}
                 <td>
                   {% if line.is_away %}
+                  <div class="row-actions">
                     <a class="btn btn--sm" href="/trips/{{ trip.id }}/return/{{ line.item.id }}">Вернулась</a>
                     <a class="btn btn--sm btn--ghost" href="/trips/{{ trip.id }}/leave/{{ line.item.id }}">Оставлена</a>
+                  </div>
                   {% endif %}
                 </td>
                 {% endif %}
@@ -160,10 +162,20 @@
 {% endblock %}
 
 {% block after %}
-{% if can_edit and trip.is_open %}
+{% if can_edit %}
 <div class="actionbar mobile-only">
-  <a class="btn btn--primary" href="/trips/{{ trip.id }}/take">Довезти единицу</a>
-  <a class="btn btn--ghost" href="/trips/{{ trip.id }}/act">Акт</a>
+  {% if trip.is_open %}
+    <a class="btn btn--primary" href="/trips/{{ trip.id }}/take">Довезти единицу</a>
+    <a class="btn" href="/trips/{{ trip.id }}/act">Акт</a>
+    <form method="post" action="/trips/{{ trip.id }}/close">
+      <button class="btn btn--ghost" type="submit">Закрыть</button>
+    </form>
+  {% else %}
+    <a class="btn btn--primary" href="/trips/{{ trip.id }}/act">Акт</a>
+    <form method="post" action="/trips/{{ trip.id }}/reopen">
+      <button class="btn" type="submit">Открыть снова</button>
+    </form>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

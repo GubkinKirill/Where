@@ -15,7 +15,7 @@
       {% if project.customer %}<span class="type-chip">{{ project.customer }}</span>{% endif %}
     </div>
   </div>
-  <div class="actions desktop-only">
+  <div class="actions">
     <a class="btn" href="/items?owner={{ project.id }}">Открыть в списке единиц</a>
     {% if user.role == UserRole.ADMIN %}
       <a class="btn btn--ghost" href="/directories/projects/{{ project.id }}">Изменить</a>
