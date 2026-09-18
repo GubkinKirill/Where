@@ -4,10 +4,10 @@ Every change is a record in the movement log; the columns on Item are a cache th
 this module keeps in sync. Nothing else is allowed to write them — see location_guard.
 """
 
-from datetime import date, datetime
-from typing import Optional
+from datetime import date, datetime, time, timedelta
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.base import now
@@ -21,6 +21,9 @@ from app.services import tree
 from app.services.errors import MoveError
 from app.services.location import LocationRef, describe_location
 from app.services.location_guard import location_write
+
+if TYPE_CHECKING:
+    from app.schemas.movement import MovementFilter
 
 
 def move_item(
@@ -282,6 +285,57 @@ def acknowledge(db: Session, *, movement: Movement, employee: Employee) -> Movem
     return movement
 
 
+def search(db: Session, filters: "MovementFilter") -> list[Movement]:
+    """The journal, narrowed. Joined to items so a unit can be found by the number
+    printed on it rather than by its id."""
+    stmt = select(Movement).join(Item, Movement.item_id == Item.id)
+
+    if filters.q:
+        pattern = f"%{filters.q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Item.inv_number.ilike(pattern),
+                Item.legacy_number.ilike(pattern),
+                Item.serial_number.ilike(pattern),
+                Item.name.ilike(pattern),
+            )
+        )
+    if filters.reason:
+        stmt = stmt.where(Movement.reason == filters.reason)
+    if filters.employee_id:
+        stmt = stmt.where(
+            or_(
+                Movement.to_employee_id == filters.employee_id,
+                Movement.from_employee_id == filters.employee_id,
+                Movement.recipient_employee_id == filters.employee_id,
+            )
+        )
+    if filters.trip_id:
+        stmt = stmt.where(
+            or_(
+                Movement.to_trip_id == filters.trip_id,
+                Movement.from_trip_id == filters.trip_id,
+            )
+        )
+    if filters.date_from:
+        stmt = stmt.where(Movement.moved_at >= datetime.combine(filters.date_from, time.min))
+    if filters.date_to:
+        # день «по» включительно: сравниваем с началом следующего
+        stmt = stmt.where(
+            Movement.moved_at < datetime.combine(filters.date_to + timedelta(days=1), time.min)
+        )
+
+    return list(
+        db.scalars(
+            stmt.order_by(Movement.moved_at.desc(), Movement.id.desc()).limit(filters.limit)
+        )
+    )
+
+
+def count_all(db: Session) -> int:
+    return db.scalar(select(func.count(Movement.id))) or 0
+
+
 def history(db: Session, item: Item) -> list[Movement]:
     return list(
         db.scalars(
@@ -290,6 +344,25 @@ def history(db: Session, item: Item) -> list[Movement]:
             .order_by(Movement.moved_at.desc(), Movement.id.desc())
         )
     )
+
+
+def open_issues_for(db: Session, items: list[Item]) -> dict[int, Movement]:
+    """Открытые выдачи для списка единиц — одним запросом вместо запроса на строку.
+    Список видит то же, что карточка: просрочен ли возврат и подтвердил ли человек."""
+    ids = [item.id for item in items if item.loc_kind is LocationKind.PERSON]
+    if not ids:
+        return {}
+    found = db.scalars(
+        select(Movement)
+        .where(
+            Movement.item_id.in_(ids),
+            Movement.reason == MovementReason.ISSUE,
+            Movement.returned_at.is_(None),
+        )
+        .order_by(Movement.moved_at, Movement.id)
+    )
+    # если записей на единицу несколько, интересна последняя
+    return {movement.item_id: movement for movement in found}
 
 
 def open_issue(db: Session, item: Item) -> Optional[Movement]:

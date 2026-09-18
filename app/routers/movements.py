@@ -3,15 +3,18 @@ from typing import Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.auth.deps import DbSession, EditorUser, ViewerUser
+from app.models.directory import Employee
 from app.models.enums import LocationKind, MovementReason
 from app.models.item import Item
-from app.models.movement import Movement
+from app.schemas.movement import MovementFilter
 from app.services import items as items_service
 from app.services import movements as movements_service
 from app.services import tree
+from app.services import trips as trips_service
 from app.services.errors import ServiceError
 from app.services.location import LocationRef
 from app.routers.helpers import form_choices, int_or_none, location_from_form
@@ -352,12 +355,29 @@ async def write_off(item_id: int, request: Request, db: DbSession, user: EditorU
 
 @router.get("/movements", response_class=HTMLResponse)
 def all_movements(request: Request, db: DbSession, user: ViewerUser):
-    recent = list(
-        db.scalars(
-            select(Movement).order_by(Movement.moved_at.desc(), Movement.id.desc()).limit(200)
-        )
+    # как и в списке единиц: кривой фильтр из закладки не должен ронять страницу
+    try:
+        filters = MovementFilter(**dict(request.query_params))
+        bad_filter = None
+    except ValidationError:
+        filters = MovementFilter()
+        bad_filter = "Фильтр не понят, показан весь журнал."
+
+    return render(
+        request,
+        "movements/list.html",
+        {
+            "user": user,
+            "movements": movements_service.search(db, filters),
+            "filters": filters,
+            "total": movements_service.count_all(db),
+            "error": bad_filter,
+            "employees": list(
+                db.scalars(select(Employee).order_by(Employee.full_name))
+            ),
+            "trips": trips_service.list_trips(db, include_closed=True),
+        },
     )
-    return render(request, "movements/list.html", {"user": user, "movements": recent})
 
 
 # --- internals ---------------------------------------------------------------

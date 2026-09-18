@@ -14,10 +14,11 @@
 
 <form class="search" method="get" action="/items"
       hx-get="/items" hx-target="#item-rows" hx-trigger="submit, keyup changed delay:400ms from:#q"
-      hx-push-url="true" hx-include="closest form">
+      hx-push-url="true" hx-include="closest form" hx-indicator="#search-busy">
   <input type="search" id="q" name="q" value="{{ filters.q or '' }}"
          placeholder="Номер, старый номер, серийный, модель, ФИО…" autocomplete="off">
   <button class="btn btn--primary" type="submit">Найти</button>
+  <span class="htmx-indicator" id="search-busy">ищу…</span>
 </form>
 
 <form class="filters" method="get" action="/items"

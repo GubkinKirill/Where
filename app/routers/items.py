@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -33,12 +34,32 @@ def item_list(request: Request, db: DbSession, user: ViewerUser) -> HTMLResponse
         "items": found,
         "filters": filters,
         "total": items_service.count_items(db),
+        "open_issues": movements_service.open_issues_for(db, found),
         "error": bad_filter,
         **form_choices(db),
     }
     if request.headers.get("HX-Request"):
         return render(request, "items/_rows.html", context)
     return render(request, "items/list.html", context)
+
+
+@router.get("/find")
+def find(request: Request, db: DbSession, user: ViewerUser):
+    """Сквозной поиск из шапки. В руках наклейка с номером — и этого достаточно:
+    точное совпадение или единственная находка открывают карточку сразу, всё
+    остальное показывается списком с тем же запросом."""
+    query = (request.query_params.get("q") or "").strip()
+    if not query:
+        return redirect("/items")
+
+    exact = items_service.get_by_inv_number(db, query)
+    if exact is not None:
+        return redirect(f"/items/{exact.id}")
+
+    found = items_service.search_items(db, ItemFilter(q=query, limit=2))
+    if len(found) == 1:
+        return redirect(f"/items/{found[0].id}")
+    return redirect(f"/items?q={quote(query)}")
 
 
 @router.get("/items/new", response_class=HTMLResponse)

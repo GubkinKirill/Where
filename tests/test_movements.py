@@ -177,3 +177,43 @@ def test_write_off_of_a_container_leaves_contents_in_place(db, types, shelf, act
     assert ram.loc_parent_item_id == pc.id
     assert ram.status is not ItemStatus.WRITTEN_OFF
     assert len(movements_service.history(db, ram)) == 2  # register + install, nothing more
+
+
+def test_journal_narrows_by_reason_person_and_dates(db, types, shelf, employee, actor):
+    from datetime import date, timedelta
+
+    from app.schemas.movement import MovementFilter
+
+    item = make_item(db, types["PC"], name="Ноутбук в журнале", at=LocationRef.storage(shelf.id), actor=actor)
+    movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+    other = make_item(db, types["MON"], at=LocationRef.storage(shelf.id), actor=actor)
+
+    everything = movements_service.search(db, MovementFilter())
+    by_reason = movements_service.search(db, MovementFilter(reason=MovementReason.ISSUE))
+    by_person = movements_service.search(db, MovementFilter(employee_id=employee.id))
+    by_number = movements_service.search(db, MovementFilter(q=item.inv_number))
+    by_name = movements_service.search(db, MovementFilter(q="ноутбук в журнале"))
+    tomorrow = movements_service.search(db, MovementFilter(date_from=date.today() + timedelta(days=1)))
+    today = movements_service.search(db, MovementFilter(date_to=date.today()))
+
+    assert len(everything) == 3  # две постановки на учёт и выдача
+    assert [record.reason for record in by_reason] == [MovementReason.ISSUE]
+    assert all(record.item_id == item.id for record in by_person)
+    assert {record.item_id for record in by_number} == {item.id}
+    assert by_name and all(record.item_id == item.id for record in by_name)
+    assert tomorrow == []
+    assert len(today) == 3  # день «по» включительно
+    assert other.id not in {record.item_id for record in by_number}
+
+
+def test_journal_filters_stack(db, types, shelf, employee, actor):
+    from app.schemas.movement import MovementFilter
+
+    item = make_item(db, types["PC"], at=LocationRef.storage(shelf.id), actor=actor)
+    movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+
+    narrowed = movements_service.search(
+        db, MovementFilter(employee_id=employee.id, reason=MovementReason.REGISTER)
+    )
+
+    assert narrowed == []  # постановку на учёт этому человеку не делали

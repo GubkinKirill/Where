@@ -18,6 +18,7 @@
             <th>Статус</th>
             <th>Где сейчас</th>
             <th>Изменено</th>
+            {% if user.can(UserRole.EDITOR) %}<th></th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -36,8 +37,31 @@
             </td>
             <td><span class="type-chip">{{ item.type.name }}</span></td>
             <td>{{ ui.status_badge(item.status) }}</td>
-            <td>{{ ui.location_cell(item) }}</td>
+            <td>
+              {{ ui.location_cell(item) }}
+              {%- set issue = open_issues.get(item.id) if open_issues else None %}
+              {%- if issue and issue.is_overdue %}
+                <div class="nested-mark nested-mark--warn">возврат просрочен с {{ issue.expected_return_date | d }}</div>
+              {%- elif issue and issue.needs_acknowledgement %}
+                <div class="nested-mark">получение не подтверждено</div>
+              {%- endif %}
+            </td>
             <td>{{ item.updated_at | d }}</td>
+            {% if user.can(UserRole.EDITOR) %}
+            <td>
+              {% if not item.is_written_off %}
+              <div class="row-actions">
+                {% if item.loc_kind == LocationKind.PERSON %}
+                  <a class="btn btn--sm btn--ghost" href="/items/{{ item.id }}/return">Принять</a>
+                {% elif item.loc_kind == LocationKind.TRIP %}
+                  <a class="btn btn--sm btn--ghost" href="/trips/{{ item.loc_trip_id }}/return/{{ item.id }}">Принять</a>
+                {% elif item.loc_kind != LocationKind.INSIDE %}
+                  <a class="btn btn--sm btn--ghost" href="/items/{{ item.id }}/issue">Выдать</a>
+                {% endif %}
+              </div>
+              {% endif %}
+            </td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>
@@ -54,6 +78,10 @@
           </div>
           <div class="rows__sub">{{ item.name }}</div>
           <div class="rows__sub">{{ ui.location_cell(item) }}</div>
+          {%- set issue = open_issues.get(item.id) if open_issues else None %}
+          {%- if issue and issue.is_overdue %}
+            <div class="rows__sub nested-mark--warn">возврат просрочен с {{ issue.expected_return_date | d }}</div>
+          {%- endif %}
         </div>
       </li>
       {% endfor %}

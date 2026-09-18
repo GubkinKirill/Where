@@ -15,6 +15,13 @@
   </div>
 </div>
 
+<form class="find" method="get" action="/find" role="search">
+  <input type="search" name="q" autocomplete="off"
+         placeholder="Инвентарный, прежний или серийный номер, название, фамилия…"
+         aria-label="Найти единицу">
+  <button class="btn btn--primary" type="submit">Найти</button>
+</form>
+
 <div class="tiles">
   {% for tile in tiles %}
   <a class="tile {{ 'tile--warn' if tile.tone == 'warn' }}" href="{{ tile.url }}">

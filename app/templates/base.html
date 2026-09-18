@@ -30,6 +30,10 @@
       {% endif %}
     </nav>
     {% if user.is_staff %}
+    <form class="topbar__find desktop-only" method="get" action="/find" role="search">
+      <input type="search" id="global-find" name="q" autocomplete="off"
+             placeholder="Найти по номеру…" aria-label="Поиск по учёту" title="Нажмите «/» для поиска">
+    </form>
     <details class="menu">
       <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users', 'kits', 'projects') }}">Ещё</summary>
       <div class="menu__list">
@@ -81,6 +85,17 @@
       document.querySelectorAll('details.menu[open]').forEach(function (menu) {
         menu.removeAttribute('open');
       });
+      if (document.activeElement && document.activeElement.id === 'global-find') {
+        document.activeElement.blur();
+      }
+    }
+    /* «/» — в поиск, но только если человек не набирает текст в другом поле */
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target.tagName || ''));
+    var find = document.getElementById('global-find');
+    if (event.key === '/' && !typing && !event.ctrlKey && !event.metaKey && find) {
+      event.preventDefault();
+      find.focus();
+      find.select();
     }
   });
 </script>

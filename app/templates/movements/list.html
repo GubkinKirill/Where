@@ -3,15 +3,74 @@
 {% block title %}Перемещения — Учёт техники{% endblock %}
 
 {% block content %}
-<div class="page__head"><h1>Журнал перемещений</h1></div>
-<div class="count">Последние {{ movements | length }} записей</div>
+<div class="page__head">
+  <div>
+    <h1>Журнал перемещений</h1>
+    <div class="crumbs" style="margin-top:6px">
+      Единственный источник правды о том, где что было и кто это записал.
+    </div>
+  </div>
+</div>
+
+<form class="filters" method="get" action="/movements">
+  <input type="search" name="q" value="{{ filters.q or '' }}"
+         placeholder="Номер, серийный или название единицы" autocomplete="off" style="min-width:230px">
+
+  <select name="reason">
+    <option value="">Любое основание</option>
+    {% for reason, label in MOVEMENT_REASON_LABELS.items() %}
+      <option value="{{ reason.value }}" {{ 'selected' if filters.reason == reason }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="employee_id">
+    <option value="">Любой сотрудник</option>
+    {% for employee in employees %}
+      <option value="{{ employee.id }}" {{ 'selected' if filters.employee_id == employee.id }}>
+        {{ employee.short_name }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="trip_id">
+    <option value="">Любая командировка</option>
+    {% for trip in trips %}
+      <option value="{{ trip.id }}" {{ 'selected' if filters.trip_id == trip.id }}>
+        {{ trip.code }} · {{ trip.destination }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <label class="filters__date">
+    с <input type="date" name="date_from" value="{{ filters.date_from.isoformat() if filters.date_from else '' }}">
+  </label>
+  <label class="filters__date">
+    по <input type="date" name="date_to" value="{{ filters.date_to.isoformat() if filters.date_to else '' }}">
+  </label>
+
+  <button class="btn btn--sm btn--primary" type="submit">Показать</button>
+  {% if not filters.is_empty %}
+    <a class="btn btn--sm btn--ghost" href="/movements">Сбросить</a>
+  {% endif %}
+</form>
+
+<div class="count">
+  {% if filters.is_empty %}
+    Последние {{ movements | length }} записей из {{ total }}
+  {% else %}
+    Найдено записей: {{ movements | length }}{% if movements | length == filters.limit %} (показаны первые){% endif %}
+  {% endif %}
+</div>
 
 <section class="card">
   <div class="card__body card__body--flush">
     {% if not movements %}
-      <div class="empty-state">Журнал пуст.</div>
+      <div class="empty-state">
+        {% if filters.is_empty %}Журнал пуст.{% else %}Под фильтр ничего не подошло.{% endif %}
+      </div>
     {% else %}
-    <div class="table-wrap">
+
+    <div class="table-wrap desktop-only">
       <table class="list">
         <thead>
           <tr>
@@ -25,7 +84,7 @@
         <tbody>
           {% for movement in movements %}
           <tr>
-            <td>{{ movement.moved_at | dt }}</td>
+            <td style="white-space:nowrap">{{ movement.moved_at | dt }}</td>
             <td>
               <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
               <div class="nested-mark">{{ movement.item.name }}</div>
@@ -41,6 +100,28 @@
         </tbody>
       </table>
     </div>
+
+    <ul class="rows mobile-only">
+      {% for movement in movements %}
+      <li>
+        <div class="rows__main">
+          <div class="rows__title">
+            <a href="/items/{{ movement.item_id }}" class="inv">{{ movement.item.inv_number }}</a>
+            {{ movement.reason | reason_label | lower }}
+          </div>
+          <div class="rows__sub">{{ movement.item.name }}</div>
+          <div class="rows__sub">
+            {% if movement.from_kind %}{{ movement.from_label }} → {% endif %}{{ movement.to_label }}
+          </div>
+          <div class="rows__sub">
+            {{ movement.moved_at | dt }}
+            {%- if movement.moved_by %} · {{ movement.moved_by.display_name }}{% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
     {% endif %}
   </div>
 </section>

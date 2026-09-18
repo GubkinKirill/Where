@@ -175,3 +175,65 @@ def test_the_section_bar_stays_one_line(client, db, editor, types, shelf):
 
     menu = html[html.index("menu__list") : html.index("</details>")]
     assert "Проекты" in menu and "Комплекты" in menu
+
+
+def test_global_search_opens_the_only_match(client, db, editor, types, shelf):
+    item = make_item(db, types["PC"], name="Системный блок HP", at=LocationRef.storage(shelf.id))
+    make_item(db, types["MON"], name="Монитор Dell", at=LocationRef.storage(shelf.id))
+    db.commit()
+    sign_in(client, "editor")
+
+    # точный инвентарный номер — сразу карточка, даже набранный строчными
+    exact = client.get("/find", params={"q": item.inv_number.lower()}, follow_redirects=False)
+    assert exact.status_code == 303
+    assert exact.headers["location"] == f"/items/{item.id}"
+
+    # единственное совпадение по названию — тоже карточка
+    single = client.get("/find", params={"q": "Системный"}, follow_redirects=False)
+    assert single.headers["location"] == f"/items/{item.id}"
+
+    # несколько совпадений — список с тем же запросом
+    many = client.get("/find", params={"q": "о"}, follow_redirects=False)
+    assert many.headers["location"].startswith("/items?q=")
+
+    # пустой запрос никуда не ведёт, кроме списка
+    empty = client.get("/find", params={"q": "  "}, follow_redirects=False)
+    assert empty.headers["location"] == "/items"
+
+
+def test_journal_page_filters_what_it_shows(client, db, editor, types, shelf, employee):
+    kept = make_item(db, types["PC"], name="Нужная единица", at=LocationRef.storage(shelf.id))
+    hidden = make_item(db, types["MON"], name="Лишняя единица", at=LocationRef.storage(shelf.id))
+    db.commit()
+    sign_in(client, "editor")
+
+    page = client.get("/movements", params={"q": kept.inv_number})
+
+    assert kept.inv_number in page.text
+    assert hidden.inv_number not in page.text
+    assert "Сбросить" in page.text
+
+
+def test_the_list_offers_the_next_action_and_flags_overdue(
+    client, db, editor, types, shelf, employee
+):
+    from datetime import date, timedelta
+
+    from app.services import movements as movements_service
+
+    spare = make_item(db, types["MON"], name="Монитор на полке", at=LocationRef.storage(shelf.id))
+    issued = make_item(db, types["PC"], name="Блок у человека", at=LocationRef.storage(shelf.id))
+    movements_service.issue_item(
+        db,
+        item=issued,
+        employee_id=employee.id,
+        expected_return_date=date.today() - timedelta(days=2),
+    )
+    db.commit()
+    sign_in(client, "editor")
+
+    page = client.get("/items").text
+
+    assert f'/items/{spare.id}/issue">Выдать' in page
+    assert f'/items/{issued.id}/return">Принять' in page
+    assert "возврат просрочен" in page
