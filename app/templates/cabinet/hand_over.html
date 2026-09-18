@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui %}
+{% set section = 'cabinet' %}
+{% block title %}Передать {{ item.inv_number }} — Моя техника{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="/cabinet">Моя техника</a> / передать коллеге</div>
+<h1 style="margin-bottom:16px">Передать коллеге</h1>
+
+<section class="card" style="max-width:620px">
+  <div class="card__body">
+    <div class="subject">
+      <span class="inv" style="font-size:16px">{{ item.inv_number }}</span>
+      <span>{{ item.name }}</span>
+      {{ ui.status_badge(item.status) }}
+    </div>
+
+    <form method="post" action="/cabinet/hand-over/{{ item.id }}">
+      <div class="form-row">
+        <label for="recipient_id">Кому <span class="req">*</span></label>
+        <select id="recipient_id" name="recipient_id" required>
+          <option value="">— выберите сотрудника —</option>
+          {% for line in colleagues %}
+            {% if line.employee.id != employee.id %}
+              <option value="{{ line.employee.id }}">
+                {{ line.employee.short_name }}{% if line.employee.position %} · {{ line.employee.position }}{% endif %}
+              </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="comment">Комментарий</label>
+        <input type="text" id="comment" name="comment" placeholder="Например: на время моего отпуска">
+      </div>
+
+      <p class="hint">
+        После передачи вещь сразу перейдёт на коллегу и будет ждать, пока он отметит
+        «Получил» у себя в кабинете. Запись попадёт в журнал: видно, кто передал,
+        кому и когда. Если передали по ошибке — попросите коллегу передать обратно,
+        в журнале останутся обе записи.
+      </p>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">Передать</button>
+        <a class="btn" href="/cabinet">Отмена</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

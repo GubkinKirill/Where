@@ -7,8 +7,9 @@ from app.auth.providers import hash_password
 from app.db import get_db
 from app.main import app
 from app.models.directory import Employee
-from app.models.enums import UserRole
+from app.models.enums import LocationKind, MovementReason, UserRole
 from app.models.user import User
+from app.services import employees as employees_service
 from app.services import movements as movements_service
 from app.services.location import LocationRef
 from tests.factories import make_item
@@ -142,3 +143,77 @@ def test_account_without_an_employee_card_is_told_so(client, db):
     response = client.get("/cabinet")
     assert response.status_code == 404
     assert "не привязана к карточке сотрудника" in response.text
+
+
+def test_employee_hands_an_item_to_a_colleague(client, db, account, employee, colleague, types, shelf, actor):
+    item = make_item(db, types["PC"], name="Монитор Dell", at=LocationRef.storage(shelf.id))
+    movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+    db.commit()
+    sign_in(client)
+
+    page = client.get("/cabinet").text
+    assert f"/cabinet/hand-over/{item.id}" in page
+
+    client.post(f"/cabinet/hand-over/{item.id}", data={"recipient_id": colleague.id})
+    db.refresh(item)
+
+    assert item.loc_employee_id == colleague.id
+    log = movements_service.history(db, item)[0]
+    assert log.reason is MovementReason.ISSUE
+    assert log.from_employee_id == employee.id
+    assert log.recipient_employee_id == colleague.id
+    assert log.moved_by_user_id == account.id  # автор записи — сам сотрудник
+    assert "Передано между сотрудниками" in log.comment
+    # получатель ещё не подтвердил, отдел это видит
+    assert log.needs_acknowledgement
+    assert movements_service.unacknowledged(db) == [log]
+    # у передавшего выдача закрыта, вещь за ним больше не числится
+    assert employees_service.items_of(db, employee) == []
+
+
+def test_employee_cannot_hand_over_what_is_not_theirs(
+    client, db, account, employee, colleague, types, shelf, actor
+):
+    item = make_item(db, types["PC"], at=LocationRef.storage(shelf.id))
+    movements_service.issue_item(db, item=item, employee_id=colleague.id, actor=actor)
+    db.commit()
+    sign_in(client)
+
+    form = client.get(f"/cabinet/hand-over/{item.id}")
+    posted = client.post(f"/cabinet/hand-over/{item.id}", data={"recipient_id": employee.id})
+    db.refresh(item)
+
+    assert form.status_code == 404
+    assert posted.status_code == 400
+    assert item.loc_employee_id == colleague.id
+
+
+def test_handover_to_a_dismissed_colleague_is_refused(
+    client, db, account, employee, colleague, types, shelf, actor
+):
+    item = make_item(db, types["PC"], at=LocationRef.storage(shelf.id))
+    movements_service.issue_item(db, item=item, employee_id=employee.id, actor=actor)
+    colleague.is_active = False
+    db.commit()
+    sign_in(client)
+
+    response = client.post(f"/cabinet/hand-over/{item.id}", data={"recipient_id": colleague.id})
+    db.refresh(item)
+
+    assert response.status_code == 400
+    assert "уволен" in response.text
+    assert item.loc_employee_id == employee.id
+
+
+def test_the_cabinet_still_moves_nothing_else(client, db, account, employee, types, shelf, actor):
+    """Передача своего — единственное перемещение, доступное сотруднику."""
+    spare = make_item(db, types["MON"], at=LocationRef.storage(shelf.id))
+    db.commit()
+    sign_in(client)
+
+    assert client.get(f"/items/{spare.id}/issue").status_code == 403
+    assert client.get(f"/items/{spare.id}/move").status_code == 403
+    assert client.get(f"/items/{spare.id}/write-off").status_code == 403
+    assert client.post(f"/items/{spare.id}/return", data={}).status_code == 403
+    db.refresh(spare)
+    assert spare.loc_kind is LocationKind.STORAGE

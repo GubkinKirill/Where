@@ -134,6 +134,42 @@ def return_all_to_storage(
     ]
 
 
+def hand_over(
+    db: Session,
+    *,
+    item: Item,
+    giver: Employee,
+    recipient: Employee,
+    actor: Optional[User] = None,
+    comment: Optional[str] = None,
+) -> Movement:
+    """Сотрудник отдаёт свою вещь коллеге сам, не дожидаясь отдела.
+
+    Прав редактора для этого не нужно, и это не дыра: отдать можно только то,
+    что числится за тобой, и только работающему коллеге. Запись в журнале —
+    обычная выдача, с автором-сотрудником, а получатель подтверждает её тем же
+    «Получил», что и выдачу от отдела. Пока не подтвердил, вещь висит в отчёте
+    «не подтверждено» — отдел видит передачу, даже если ему не сказали.
+    """
+    if item.loc_kind is not LocationKind.PERSON or item.loc_employee_id != giver.id:
+        raise ServiceError(f"Единица {item.inv_number} за вами не числится.")
+    if recipient.id == giver.id:
+        raise ServiceError("Выберите другого сотрудника.")
+    if not recipient.is_active:
+        raise ServiceError("Сотрудник уволен, передать ему технику нельзя.")
+
+    note = (comment or "").strip()
+    note = f"Передано между сотрудниками. {note}" if note else "Передано между сотрудниками"
+    return issue_item(
+        db,
+        item=item,
+        employee_id=recipient.id,
+        room_id=recipient.default_room_id,
+        actor=actor,
+        comment=note,
+    )
+
+
 def set_active(db: Session, *, employee: Employee, is_active: bool) -> Employee:
     """Dismissal does not touch the equipment: it stays on the person until moved,
     so nothing silently disappears from the books."""

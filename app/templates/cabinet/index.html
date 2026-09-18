@@ -32,7 +32,11 @@
             <span class="inv">{{ movement.item.inv_number }}</span> {{ movement.item.name }}
           </div>
           <div class="rows__sub">
-            Выдано {{ movement.moved_at | dt }}
+            {% if movement.from_kind == LocationKind.PERSON and movement.from_employee %}
+              Передал {{ movement.from_employee.short_name }}, {{ movement.moved_at | dt }}
+            {% else %}
+              Выдано {{ movement.moved_at | dt }}
+            {% endif %}
             {%- if movement.expected_return_date %} · вернуть до {{ movement.expected_return_date | d }}{% endif %}
             {%- if movement.comment %} · «{{ movement.comment }}»{% endif %}
           </div>
@@ -123,9 +127,11 @@
               {% for child in contents[item.id] %}
                 <span class="inv">{{ child.inv_number }}</span> {{ child.name }}{% if not loop.last %}; {% endif %}
               {% endfor %}
+              <span class="nested-mark">— уедет вместе с этой единицей</span>
             </div>
           {% endif %}
         </div>
+        <a class="btn btn--sm btn--ghost" href="/cabinet/hand-over/{{ item.id }}">Передать</a>
       </li>
       {% endfor %}
     </ul>

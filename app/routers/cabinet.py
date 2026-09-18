@@ -63,6 +63,68 @@ async def confirm(request: Request, db: DbSession, user: CabinetUser):
     return redirect("/cabinet", flash=f"Получение {movement.item.inv_number} подтверждено.")
 
 
+@router.get("/cabinet/hand-over/{item_id}", response_class=HTMLResponse)
+def hand_over_form(
+    item_id: int, request: Request, db: DbSession, user: CabinetUser
+) -> HTMLResponse:
+    """«Передать коллеге» — единственное перемещение, которое сотрудник делает сам."""
+    item = items_service.get_item(db, item_id)
+    if item is None or item.loc_employee_id != user.employee.id:
+        return render(request, "not_found.html", {"user": user}, status_code=404)
+    return render(
+        request,
+        "cabinet/hand_over.html",
+        {
+            "user": user,
+            "employee": user.employee,
+            "item": item,
+            "colleagues": employees_service.with_counts(db),
+        },
+    )
+
+
+@router.post("/cabinet/hand-over/{item_id}")
+async def hand_over(item_id: int, request: Request, db: DbSession, user: CabinetUser):
+    item = items_service.get_item(db, item_id)
+    if item is None:
+        return redirect("/cabinet", flash="Единица не найдена.", kind="warn")
+
+    form = await request.form()
+    recipient = db.get(Employee, int_or_none(form.get("recipient_id")) or 0)
+    try:
+        if recipient is None:
+            raise ServiceError("Выберите, кому передаёте.")
+        employees_service.hand_over(
+            db,
+            item=item,
+            giver=user.employee,
+            recipient=recipient,
+            actor=user,
+            comment=form.get("comment"),
+        )
+    except ServiceError as exc:
+        db.rollback()
+        return render(
+            request,
+            "cabinet/hand_over.html",
+            {
+                "user": user,
+                "employee": user.employee,
+                "item": item,
+                "colleagues": employees_service.with_counts(db),
+                "error": str(exc),
+            },
+            status_code=400,
+        )
+
+    db.commit()
+    return redirect(
+        "/cabinet",
+        flash=f"{item.inv_number} передана: {recipient.short_name}. "
+        "Остаётся дождаться, пока коллега отметит получение.",
+    )
+
+
 @router.get("/cabinet/history", response_class=HTMLResponse)
 def history(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
     """Everything ever handed to this person or taken back from them."""
