@@ -375,18 +375,49 @@ h2 { font-size: 15px; }
   border-color: var(--accent);
 }
 
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+/* Полоса фильтров — своя панель. Раньше белые поля стояли на светлом фоне
+   страницы и сливались друг с другом в одно пятно: белое на белом, разделённое
+   только тонкой рамкой. Теперь наоборот — панель светлая, поля темнее её. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
 .filters select,
 .filters input[type="search"],
-.filters input[type="date"] {
+.filters input[type="date"],
+.filters input[type="text"] {
   padding: 7px 10px;
   border: 1px solid var(--border-strong);
   border-radius: 6px;
-  background: #fff;
+  background: var(--bg);
   font: inherit;
   font-size: 14px;
   color: var(--text);
 }
+.filters select:hover,
+.filters input:hover { border-color: var(--muted); }
+.filters select:focus,
+.filters input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+/* наложенный фильтр видно, не перечитывая все поля */
+.filters .is-set {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 /* «с … по …»: подпись и поле держатся вместе и переносятся одним куском */
 .filters__date {
   display: inline-flex;
@@ -394,6 +425,7 @@ h2 { font-size: 15px; }
   gap: 6px;
   color: var(--muted);
   font-size: 13.5px;
+  white-space: nowrap;
 }
 
 /* поиск на сводке — первое, что видно после входа */

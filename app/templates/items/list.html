@@ -25,49 +25,49 @@
       hx-get="/items" hx-target="#item-rows" hx-trigger="change" hx-push-url="true">
   <input type="hidden" name="q" value="{{ filters.q or '' }}">
 
-  <select name="type_id">
+  <select name="type_id" class="{{ 'is-set' if filters.type_id }}">
     <option value="">Все типы</option>
     {% for type in types %}
       <option value="{{ type.id }}" {{ 'selected' if filters.type_id == type.id }}>{{ type.name }}</option>
     {% endfor %}
   </select>
 
-  <select name="status">
+  <select name="status" class="{{ 'is-set' if filters.status }}">
     <option value="">Все статусы</option>
     {% for status, label in STATUS_LABELS.items() %}
       <option value="{{ status.value }}" {{ 'selected' if filters.status == status }}>{{ label }}</option>
     {% endfor %}
   </select>
 
-  <select name="loc_kind">
+  <select name="loc_kind" class="{{ 'is-set' if filters.loc_kind }}">
     <option value="">Любое размещение</option>
     {% for kind, label in LOCATION_KIND_LABELS.items() %}
       <option value="{{ kind.value }}" {{ 'selected' if filters.loc_kind == kind }}>{{ label }}</option>
     {% endfor %}
   </select>
 
-  <select name="room_id">
+  <select name="room_id" class="{{ 'is-set' if filters.room_id }}">
     <option value="">Все кабинеты</option>
     {% for room in rooms %}
       <option value="{{ room.id }}" {{ 'selected' if filters.room_id == room.id }}>{{ room.number }}</option>
     {% endfor %}
   </select>
 
-  <select name="department_id">
+  <select name="department_id" class="{{ 'is-set' if filters.department_id }}">
     <option value="">Все отделы</option>
     {% for department in departments %}
       <option value="{{ department.id }}" {{ 'selected' if filters.department_id == department.id }}>{{ department }}</option>
     {% endfor %}
   </select>
 
-  <select name="employee_id">
+  <select name="employee_id" class="{{ 'is-set' if filters.employee_id }}">
     <option value="">Все сотрудники</option>
     {% for employee in employees %}
       <option value="{{ employee.id }}" {{ 'selected' if filters.employee_id == employee.id }}>{{ employee.short_name }}</option>
     {% endfor %}
   </select>
 
-  <select name="owner">
+  <select name="owner" class="{{ 'is-set' if filters.owner }}">
     <option value="">Любая принадлежность</option>
     <option value="company" {{ 'selected' if filters.is_company_owned }}>Предприятие</option>
     {% for project in projects %}
