@@ -1,10 +1,17 @@
-"""Опустошить базу и оставить одну учётную запись администратора.
+"""Опустошить базу.
 
     python -m scripts.reset_db --admin ivanov --full-name "Иванов И. И."
+    python -m scripts.reset_db --keep-people --keep-types
 
-Для боевого старта после знакомства с демо-набором: справочники, сотрудники,
-единицы, журнал, расходники, проекты и командировки стираются, остаётся
-один вход, с которого всё заводится заново.
+Первый способ — для боевого старта с нуля: справочники, сотрудники, единицы,
+журнал, расходники, проекты и командировки стираются, остаётся один вход,
+с которого всё заводится заново.
+
+Второй — чтобы убрать тестовое наполнение, когда люди уже заведены по-настоящему:
+`--keep-people` сохраняет карточки сотрудников и все учётные записи, а стирает
+только то, что вокруг них — единицы, журнал, склад, расходники, проекты,
+командировки и справочники мест. Ссылки сотрудников на отдел и кабинет при этом
+очищаются: сами справочники стёрты, и указывать им некуда.
 
 Если учётка с таким логином уже есть, она сохраняется вместе с паролем —
 скрипт ничего не спрашивает и никаких паролей не показывает. Для новой
@@ -19,7 +26,7 @@ import argparse
 import getpass
 import sys
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text, update
 
 from app.auth.providers import hash_password
 from app.db import SessionLocal
@@ -32,6 +39,9 @@ from app.models.movement import Movement
 from app.models.project import Project
 from app.models.trip import Trip
 from app.models.user import User
+
+# кого сохраняет --keep-people: сами люди и их входы в систему
+PEOPLE = (User, Employee)
 
 # порядок важен: сначала то, что ссылается, потом то, на что ссылаются
 WIPE_ORDER = [
@@ -76,53 +86,61 @@ STANDARD_TYPES = [
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Очистить базу, оставив одного администратора")
-    parser.add_argument("--admin", required=True, metavar="ЛОГИН")
+    parser = argparse.ArgumentParser(description="Очистить базу")
+    parser.add_argument("--admin", metavar="ЛОГИН", help="учётка администратора, которая останется")
     parser.add_argument("--full-name", default="")
+    parser.add_argument(
+        "--keep-people",
+        action="store_true",
+        help="сохранить сотрудников и учётные записи, стереть только данные вокруг них",
+    )
     types = parser.add_mutually_exclusive_group()
     types.add_argument("--keep-types", action="store_true", help="сохранить типы единиц как есть")
     types.add_argument("--with-types", action="store_true", help="загрузить стандартный набор типов")
     parser.add_argument("--yes", action="store_true", help="не спрашивать подтверждения")
     args = parser.parse_args()
 
+    if not args.keep_people and not args.admin:
+        parser.error("укажите --admin: иначе после очистки в базу некому будет войти")
+
+    wipe = [model for model in WIPE_ORDER if not (args.keep_people and model in PEOPLE)]
+
     with SessionLocal() as db:
-        totals = {
-            model.__tablename__: len(list(db.scalars(select(model)))) for model in WIPE_ORDER
-        }
+        totals = {model.__tablename__: len(list(db.scalars(select(model)))) for model in wipe}
+        kept_people = (
+            db.scalar(select(func.count(Employee.id))),
+            db.scalar(select(func.count(User.id))),
+        )
+        linked = db.scalar(
+            select(func.count(Employee.id)).where(
+                (Employee.department_id.is_not(None)) | (Employee.default_room_id.is_not(None))
+            )
+        )
+
     filled = {name: n for name, n in totals.items() if n}
     print("Будет стёрто:")
     for name, n in filled.items():
         print(f"  {name}: {n}")
     if not filled:
-        print("  — база и так пуста")
+        print("  — стирать нечего")
+    if args.keep_people:
+        print(f"\nСохраняются: сотрудников {kept_people[0]}, учётных записей {kept_people[1]}.")
+        if linked:
+            print(
+                f"У {linked} из них очистятся ссылки на отдел и кабинет: "
+                "эти справочники стираются, и указывать станет некуда."
+            )
 
     if not args.yes:
         if input('Стереть безвозвратно? Введите «да»: ').strip().lower() != "да":
             print("Отменено.")
             return 1
 
-    with SessionLocal() as db:
-        existing = db.scalars(select(User).where(User.username == args.admin)).first()
-        kept_admin = (
-            (existing.username, existing.full_name, existing.password_hash)
-            if existing is not None
-            else None
-        )
-
-    if kept_admin is not None:
-        print(f"\nУчётка «{args.admin}» уже есть — сохраняю её вместе с паролем.")
-        password_hash = kept_admin[2]
-        full_name = args.full_name or kept_admin[1]
-    else:
-        password = getpass.getpass("Пароль администратора: ")
-        if password != getpass.getpass("Ещё раз: "):
-            print("Пароли не совпадают.")
+    admin_values = None
+    if args.admin is not None:
+        admin_values = _admin_account(args)
+        if admin_values is None:
             return 1
-        if len(password) < 8:
-            print("Пароль короче 8 символов.")
-            return 1
-        password_hash = hash_password(password)
-        full_name = args.full_name or args.admin
 
     kept_types = []
     with SessionLocal() as db:
@@ -134,7 +152,11 @@ def main() -> int:
         # проверку связей откладываем до конца: таблицы ссылаются друг на друга
         # и на самих себя (единица внутри единицы, полка внутри шкафа)
         db.execute(text("PRAGMA defer_foreign_keys=ON"))
-        for model in WIPE_ORDER:
+        if args.keep_people:
+            # сотрудники остаются, а отделы и кабинеты — нет: обнуляем ссылки,
+            # иначе карточки повиснут на несуществующих записях
+            db.execute(update(Employee).values(department_id=None, default_room_id=None))
+        for model in wipe:
             db.execute(delete(model))
         db.execute(delete(ItemType))
 
@@ -142,20 +164,53 @@ def main() -> int:
         for code, name, is_container, order in source:
             db.add(ItemType(code=code, name=name, is_container=is_container, sort_order=order))
 
-        db.add(
-            User(
-                username=args.admin,
-                full_name=full_name,
-                role=UserRole.ADMIN,
-                password_hash=password_hash,
-                is_active=True,
+        if admin_values is not None:
+            username, full_name, password_hash = admin_values
+            db.add(
+                User(
+                    username=username,
+                    full_name=full_name,
+                    role=UserRole.ADMIN,
+                    password_hash=password_hash,
+                    is_active=True,
+                )
             )
-        )
         db.commit()
 
-    print(f"\nБаза очищена. Вход: {args.admin}, роль admin.")
+    if args.keep_people:
+        print(f"\nБаза очищена. Сотрудники и учётные записи на месте: "
+              f"{kept_people[0]} и {kept_people[1]}.")
+    else:
+        print(f"\nБаза очищена. Вход: {args.admin}, роль admin.")
     print(f"Типов единиц: {len(source)}" if source else "Типов единиц нет — заведите их в справочниках.")
     return 0
+
+
+def _admin_account(args):
+    """Логин, имя и хеш пароля для администратора, который останется после очистки.
+
+    Существующую учётку сохраняем вместе с паролем — тогда скрипт ничего не
+    спрашивает и никаких паролей не печатает. Новую заводим, спросив пароль."""
+    with SessionLocal() as db:
+        existing = db.scalars(select(User).where(User.username == args.admin)).first()
+        kept = (
+            (existing.username, existing.full_name, existing.password_hash)
+            if existing is not None
+            else None
+        )
+
+    if kept is not None:
+        print(f"\nУчётка «{args.admin}» уже есть — сохраняю её вместе с паролем.")
+        return args.admin, args.full_name or kept[1], kept[2]
+
+    password = getpass.getpass("Пароль администратора: ")
+    if password != getpass.getpass("Ещё раз: "):
+        print("Пароли не совпадают.")
+        return None
+    if len(password) < 8:
+        print("Пароль короче 8 символов.")
+        return None
+    return args.admin, args.full_name or args.admin, hash_password(password)
 
 
 if __name__ == "__main__":

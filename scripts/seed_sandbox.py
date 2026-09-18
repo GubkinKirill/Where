@@ -12,7 +12,10 @@
 
 Всё заведённое — обычные записи, и убирается обычным путём:
 
-    python -m scripts.reset_db --admin <логин> --keep-types
+    python -m scripts.reset_db --keep-people --keep-types
+
+`--keep-people` здесь обязателен: без него очистка снесёт и сотрудников с их
+учётками, то есть ровно то, что этот скрипт бережёт.
 
 Скрипт отказывается работать, если единицы уже заведены: дописывать тестовое
 к боевому учёту нельзя.
@@ -502,7 +505,8 @@ def _report(db) -> None:
         print(f"  {name}: {value}")
     print(
         "\nУчётные записи и карточки сотрудников не тронуты.\n"
-        "Убрать тестовое: python -m scripts.reset_db --admin ЛОГИН --keep-types"
+        "Убрать тестовое, сохранив людей: "
+        "python -m scripts.reset_db --keep-people --keep-types"
     )
 
 
