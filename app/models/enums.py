@@ -60,24 +60,6 @@ class StoragePlaceKind(StrEnum):
     ROOM = "room"
 
 
-class RequestKind(StrEnum):
-    NEED = "need"
-    BROKEN = "broken"
-    PICKUP = "pickup"
-    OTHER = "other"
-
-
-class RequestStatus(StrEnum):
-    NEW = "new"
-    IN_PROGRESS = "in_progress"
-    DONE = "done"
-    REJECTED = "rejected"
-
-    @property
-    def is_open(self) -> bool:
-        return self in (RequestStatus.NEW, RequestStatus.IN_PROGRESS)
-
-
 class ConsumableReason(StrEnum):
     RECEIPT = "receipt"
     ISSUE = "issue"

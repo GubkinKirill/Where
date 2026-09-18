@@ -17,15 +17,12 @@ from app.models.enums import (
     ItemStatus,
     MovementReason,
     ProjectStatus,
-    RequestKind,
-    RequestStatus,
     StoragePlaceKind,
     UserRole,
 )
 from app.models.item import Item, ItemType, NumberSequence
 from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.project import Project
-from app.models.request import EquipmentRequest
 from app.models.user import User
 from app.schemas.consumable import ConsumableForm
 from app.schemas.item import ItemForm
@@ -91,7 +88,6 @@ def main() -> int:
 
         _seed_items(db, users, types, places, employees, rooms, projects)
         _seed_trips(db, users, types, places, employees, projects)
-        _seed_requests(db, employees)
         _seed_consumables(db, users, places, employees)
         db.commit()
 
@@ -230,24 +226,6 @@ def _seed_projects(db) -> dict[str, Project]:
     db.flush()
     return projects
 
-
-def _seed_requests(db, employees) -> None:
-    db.add_all(
-        [
-            EquipmentRequest(
-                employee_id=employees["petrov"].id,
-                kind=RequestKind.NEED,
-                text="Нужен второй монитор на рабочее место, работаю с двумя схемами сразу.",
-            ),
-            EquipmentRequest(
-                employee_id=employees["sidorova"].id,
-                kind=RequestKind.BROKEN,
-                status=RequestStatus.IN_PROGRESS,
-                text="Принтер зажёвывает бумагу.",
-            ),
-        ]
-    )
-    db.flush()
 
 
 def _seed_types(db) -> dict[str, ItemType]:

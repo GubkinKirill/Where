@@ -7,10 +7,9 @@ from app.auth.providers import hash_password
 from app.db import get_db
 from app.main import app
 from app.models.directory import Employee
-from app.models.enums import RequestStatus, UserRole
+from app.models.enums import UserRole
 from app.models.user import User
 from app.services import movements as movements_service
-from app.services import requests as requests_service
 from app.services.location import LocationRef
 from tests.factories import make_item
 
@@ -61,7 +60,7 @@ def test_employee_lands_in_the_cabinet(client, account):
 
 def test_employee_may_not_open_the_accounting_pages(client, account):
     sign_in(client)
-    for path in ("/items", "/dashboard", "/movements", "/requests", "/admin/users"):
+    for path in ("/items", "/dashboard", "/movements", "/trips", "/admin/users"):
         assert client.get(path).status_code == 403, path
 
 
@@ -128,34 +127,6 @@ def test_search_finds_the_holder_by_inventory_number(
     found = client.get("/cabinet/search", params={"q": item.inv_number}).text
     assert item.inv_number in found
     assert "Сидорова А. В." in found
-
-
-def test_request_is_filed_and_can_be_withdrawn(client, db, account, employee):
-    sign_in(client)
-
-    client.post("/cabinet/requests", data={"kind": "need", "text": "Нужен второй монитор"})
-    filed = requests_service.of_employee(db, employee)
-    assert len(filed) == 1
-    assert filed[0].status is RequestStatus.NEW
-
-    client.post(f"/cabinet/requests/{filed[0].id}/withdraw")
-    db.refresh(filed[0])
-    assert filed[0].status is RequestStatus.REJECTED
-
-
-def test_request_cannot_point_at_somebody_elses_item(
-    client, db, account, employee, colleague, types, shelf, actor
-):
-    item = make_item(db, types["PC"], name="Системный блок", at=LocationRef.storage(shelf.id))
-    movements_service.issue_item(db, item=item, employee_id=colleague.id, actor=actor)
-    db.commit()
-    sign_in(client)
-
-    client.post(
-        "/cabinet/requests",
-        data={"kind": "broken", "text": "Не включается", "item_id": item.id},
-    )
-    assert requests_service.of_employee(db, employee) == []
 
 
 def test_account_without_an_employee_card_is_told_so(client, db):

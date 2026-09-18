@@ -210,30 +210,6 @@
     </section>
     {% endif %}
 
-    {% if requests %}
-    <section class="card">
-      <div class="card__head">
-        <h2>Заявки сотрудника</h2>
-        <a href="/requests?show=all">все заявки</a>
-      </div>
-      <div class="card__body card__body--flush">
-        <ul class="rows">
-          {% for record in requests %}
-          <li>
-            <div class="rows__main">
-              <div class="rows__title">
-                {{ record.kind | request_kind_label }}
-                <span class="badge badge--{{ record.status.value }}">{{ record.status | request_status_label }}</span>
-              </div>
-              <div class="rows__sub">{{ record.created_at | d }} · {{ record.text }}</div>
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </section>
-    {% endif %}
-
     <section class="card">
       <div class="card__head"><h2>Ещё</h2></div>
       <div class="card__body">

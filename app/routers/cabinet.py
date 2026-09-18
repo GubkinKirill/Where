@@ -1,11 +1,9 @@
 """The employee's own cabinet: signed in as themselves, they see what is assigned
-to them, confirm handovers, look up colleagues and file requests.
+to them, confirm handovers and look up colleagues.
 
-Read only by construction — nothing here writes a location. The two things an
-employee may change are their own acknowledgement and their own request.
+Read only by construction — nothing here writes a location. The one thing an
+employee may change is their own acknowledgement of a handover.
 """
-
-from typing import Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -13,16 +11,13 @@ from fastapi.responses import HTMLResponse
 from app.auth.deps import CabinetUser, DbSession
 from app.models.base import now
 from app.models.directory import Employee
-from app.models.enums import RequestKind
 from app.models.movement import Movement
-from app.models.request import EquipmentRequest
 from app.routers.helpers import int_or_none
 from app.schemas.item import ItemFilter
 from app.services import consumables as consumables_service
 from app.services import employees as employees_service
 from app.services import items as items_service
 from app.services import movements as movements_service
-from app.services import requests as requests_service
 from app.services import tree
 from app.services import trips as trips_service
 from app.services.errors import ServiceError
@@ -45,7 +40,6 @@ def cabinet(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
             "contents": {item.id: tree.contents(db, item) for item in held},
             "open_issues": {item.id: movements_service.open_issue(db, item) for item in held},
             "pending": movements_service.pending_acknowledgements(db, employee),
-            "requests": requests_service.open_of(db, employee),
             "consumables": consumables_service.issued_to(db, employee, limit=10),
             "trips": trips_service.open_trips_of(db, employee),
             "away": trips_service.items_away_with(db, employee),
@@ -146,71 +140,3 @@ def search(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
         "cabinet/search.html",
         {"user": user, "employee": user.employee, "q": query, "items": found},
     )
-
-
-@router.get("/cabinet/requests", response_class=HTMLResponse)
-def request_list(request: Request, db: DbSession, user: CabinetUser) -> HTMLResponse:
-    return render(
-        request,
-        "cabinet/requests.html",
-        {
-            "user": user,
-            "employee": user.employee,
-            "requests": requests_service.of_employee(db, user.employee),
-            "items": employees_service.items_of(db, user.employee),
-        },
-    )
-
-
-@router.post("/cabinet/requests")
-async def create_request(request: Request, db: DbSession, user: CabinetUser):
-    form = await request.form()
-    kind = _kind_or_none(form.get("kind"))
-    if kind is None:
-        return redirect("/cabinet/requests", flash="Выберите вид заявки.", kind="warn")
-
-    item = None
-    item_id = int_or_none(form.get("item_id"))
-    if item_id is not None:
-        item = items_service.get_item(db, item_id)
-        # only your own equipment: a request must not point at somebody else's unit
-        if item is None or item.loc_employee_id != user.employee.id:
-            return redirect(
-                "/cabinet/requests",
-                flash="Эта единица за вами не числится.",
-                kind="warn",
-            )
-
-    try:
-        requests_service.create(
-            db, employee=user.employee, kind=kind, text=form.get("text") or "", item=item
-        )
-    except ServiceError as exc:
-        db.rollback()
-        return redirect("/cabinet/requests", flash=str(exc), kind="warn")
-    db.commit()
-    return redirect("/cabinet/requests", flash="Заявка отправлена в технический отдел.")
-
-
-@router.post("/cabinet/requests/{request_id}/withdraw")
-def withdraw_request(request_id: int, db: DbSession, user: CabinetUser):
-    record = db.get(EquipmentRequest, request_id)
-    if record is None:
-        return redirect("/cabinet/requests", flash="Заявка не найдена.", kind="warn")
-    try:
-        requests_service.withdraw(db, request=record, employee=user.employee)
-    except ServiceError as exc:
-        db.rollback()
-        return redirect("/cabinet/requests", flash=str(exc), kind="warn")
-    db.commit()
-    return redirect("/cabinet/requests", flash="Заявка отозвана.")
-
-
-# --- internals ---------------------------------------------------------------
-
-
-def _kind_or_none(raw) -> Optional[RequestKind]:
-    try:
-        return RequestKind(raw)
-    except (ValueError, TypeError):
-        return None

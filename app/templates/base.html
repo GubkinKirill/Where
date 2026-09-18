@@ -26,18 +26,16 @@
         <a href="/cabinet" class="{{ 'is-active' if section == 'cabinet' }}">Моя техника</a>
         <a href="/cabinet/colleagues" class="{{ 'is-active' if section == 'colleagues' }}">Коллеги</a>
         <a href="/cabinet/search" class="{{ 'is-active' if section == 'search' }}">Найти вещь</a>
-        <a href="/cabinet/requests" class="{{ 'is-active' if section == 'my-requests' }}">Заявки</a>
         <a href="/cabinet/history" class="{{ 'is-active' if section == 'my-history' }}">История</a>
       {% endif %}
     </nav>
     {% if user.is_staff %}
     <details class="menu">
-      <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users', 'kits', 'projects', 'requests') }}">Ещё</summary>
+      <summary class="topbar__link {{ 'is-active' if section in ('reports', 'directories', 'users', 'kits', 'projects') }}">Ещё</summary>
       <div class="menu__list">
         <a href="/kits" class="{{ 'is-active' if section == 'kits' }}">Комплекты</a>
         <a href="/projects" class="{{ 'is-active' if section == 'projects' }}">Проекты</a>
         <a href="/consumables">Расходники</a>
-        <a href="/requests" class="{{ 'is-active' if section == 'requests' }}">Заявки</a>
         <span class="menu__sep"></span>
         <a href="/reports/unconfirmed">Не подтверждено</a>
         <a href="/reports/overdue">Просрочен возврат</a>

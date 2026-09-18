@@ -5,7 +5,7 @@
 В отличие от scripts.seed_demo, который разворачивает демо-набор с нуля вместе со
 своими сотрудниками и учётками, этот скрипт работает поверх уже заведённой базы:
 берёт тех сотрудников, что в ней есть, и добавляет к ним справочники, технику,
-склад, проекты, командировки, расходники и заявки.
+склад, проекты, командировки и расходники.
 
 Учётные записи и карточки сотрудников не создаются, не меняются и не удаляются —
 скрипт проверяет это сам и прерывается, если счётчики разошлись.
@@ -29,15 +29,12 @@ from app.models.enums import (
     ItemStatus,
     MovementReason,
     ProjectStatus,
-    RequestKind,
-    RequestStatus,
     StoragePlaceKind,
     UserRole,
 )
 from app.models.item import Item, ItemType
 from app.models.kit import KitTemplate, KitTemplateLine
 from app.models.project import Project
-from app.models.request import EquipmentRequest
 from app.models.user import User
 from app.schemas.consumable import ConsumableForm
 from app.schemas.item import ItemForm
@@ -86,7 +83,6 @@ def main() -> int:
         _kit(db, types, places, projects, actor)
         _trips(db, types, places, people, projects, actor)
         _consumables(db, places, people, actor)
-        _requests(db, people)
 
         after = (
             db.scalar(select(func.count(User.id))),
@@ -478,25 +474,6 @@ def _consumables(db, places, people, actor) -> None:
                 actor=actor,
                 comment="Взамен сломанной",
             )
-    db.flush()
-
-
-def _requests(db, people) -> None:
-    db.add_all(
-        [
-            EquipmentRequest(
-                employee_id=people[min(2, len(people) - 1)].id,
-                kind=RequestKind.NEED,
-                text="Нужен второй монитор: работаю с кодом и схемой одновременно.",
-            ),
-            EquipmentRequest(
-                employee_id=people[min(4, len(people) - 1)].id,
-                kind=RequestKind.BROKEN,
-                status=RequestStatus.IN_PROGRESS,
-                text="Не включается системный блок, мигает индикатор питания.",
-            ),
-        ]
-    )
     db.flush()
 
 

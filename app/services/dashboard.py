@@ -13,7 +13,6 @@ from app.models.item import Item
 from app.models.movement import Movement
 from app.services import consumables as consumables_service
 from app.services import projects as projects_service
-from app.services import requests as requests_service
 from app.services import trips as trips_service
 
 
@@ -40,7 +39,6 @@ def summary(db: Session) -> dict:
     total = sum(by_status.values())
     overdue = _overdue(db)
     unconfirmed = _unconfirmed_count(db)
-    open_requests = requests_service.open_count(db)
     low_stock = consumables_service.low_stock(db)
     late_trips = trips_service.overdue_trips(db)
     open_trips = trips_service.open_trips(db)
@@ -73,8 +71,6 @@ def summary(db: Session) -> dict:
         Tile("Не вернулись из поездки", len(late_trips), "/trips",
              "срок командировки прошёл, вещи ещё там",
              tone="warn" if late_trips else ""),
-        Tile("Открытых заявок", open_requests, "/requests", "от сотрудников",
-             tone="warn" if open_requests else ""),
         Tile("Заканчивается на складе", len(low_stock), "/reports/low-stock",
              "расходники ниже порога", tone="warn" if low_stock else ""),
     ]

@@ -19,7 +19,6 @@ from app.routers import (
     movements,
     projects,
     reports,
-    requests as requests_router,
     self_service,
     storage,
     trips,
@@ -43,7 +42,6 @@ app.include_router(kits.router)
 app.include_router(consumables.router)
 app.include_router(storage.router)
 app.include_router(reports.router)
-app.include_router(requests_router.router)
 app.include_router(cabinet.router)
 app.include_router(users.router)
 app.include_router(self_service.router)

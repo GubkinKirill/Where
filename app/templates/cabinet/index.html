@@ -15,7 +15,6 @@
   </div>
   <div class="actions">
     <a class="btn btn--ghost" href="/cabinet/act">Акт закрепления</a>
-    <a class="btn btn--ghost" href="/cabinet/requests">Заявки</a>
   </div>
 </div>
 
@@ -86,30 +85,6 @@
       {% endfor %}
     </ul>
     {% endif %}
-  </div>
-</section>
-{% endif %}
-
-{% if requests %}
-<section class="card">
-  <div class="card__head">
-    <h2>Мои заявки в работе — {{ requests | length }}</h2>
-    <a href="/cabinet/requests">все заявки</a>
-  </div>
-  <div class="card__body card__body--flush">
-    <ul class="rows">
-      {% for record in requests %}
-      <li>
-        <div class="rows__main">
-          <div class="rows__title">
-            {{ record.kind | request_kind_label }}
-            <span class="badge badge--{{ record.status.value }}">{{ record.status | request_status_label }}</span>
-          </div>
-          <div class="rows__sub">{{ record.created_at | d }} · {{ record.text }}</div>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
   </div>
 </section>
 {% endif %}
@@ -188,6 +163,6 @@
 
 <p style="color:var(--muted); font-size:13px">
   Список неверный — что-то отдали или получили, а здесь не отразилось?
-  <a href="/cabinet/requests">Напишите заявку</a>, запись поправят и это останется в журнале.
+  Скажите в технический отдел: запись поправят, и это останется в журнале.
 </p>
 {% endblock %}
