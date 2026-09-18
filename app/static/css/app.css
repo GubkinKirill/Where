@@ -79,21 +79,6 @@ h2 { font-size: 15px; }
 .nav a:hover { background: rgba(255, 255, 255, .08); text-decoration: none; }
 .nav a.is-active { background: rgba(255, 255, 255, .14); color: #fff; }
 
-/* сквозной поиск: номер с наклейки в руках, а не на странице «Единицы» */
-.topbar__find { display: flex; flex: none; }
-.topbar__find input {
-  width: 200px;
-  padding: 6px 10px;
-  border: 1px solid #3a424e;
-  border-radius: 6px;
-  background: #262d38;
-  color: #e9edf3;
-  font: inherit;
-  font-size: 13.5px;
-}
-.topbar__find input::placeholder { color: #8b95a5; }
-.topbar__find input:focus { outline: none; border-color: #4c8dff; background: #2c3542; }
-
 .topbar__user { font-size: 13px; color: #9aa5b4; white-space: nowrap; }
 
 /* справка живёт справа, рядом с профилем: она не раздел, а подсказка,
